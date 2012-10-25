@@ -18,7 +18,7 @@ util.inspect(ast)
 
 will result in:
 
-```json
+```javascript
 { 
   '$top': 10,
   '$skip': 5,
@@ -33,7 +33,7 @@ parser.parse("$filter=Name eq 'John' and LastName lt 'Doe'")
 ```
 results in:
 
-```json
+```javascript
 
 {
     $filter: {
@@ -72,7 +72,7 @@ parser.parse("$filter=substringof('nginx', Servers)")
 
 restuls in:
 
-```json
+```javascript
 {
     $filter: {
         type: 'functioncall',
