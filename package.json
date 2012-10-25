@@ -1,0 +1,22 @@
+{
+  "name": "odata-parser",
+  "version": "0.0.1",
+  "description": "OData query string parser",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha -R spec"
+  },
+  "dependencies": {
+    "pegjs": "0.7.0"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "repository": "",
+  "keywords": [
+    "odata",
+    "parser"
+  ],
+  "author": "qraftlabs",
+  "license": "MIT"
+}
