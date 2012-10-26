@@ -119,6 +119,15 @@ describe('odata.parser grammar', function () {
 
     });
 
+    it('should parse substringof $filter with empty string', function () {
+
+        var ast = parser.parse("$filter=substringof('', Data)");
+        
+        assert.equal(ast.$filter.args[0].type, "literal");
+        assert.equal(ast.$filter.args[0].value, "");
+
+    });
+
     it('should parse substringof eq true in $filter', function () {
 
         var ast = parser.parse("$filter=substringof('nginx', Data) eq true");
