@@ -174,6 +174,16 @@ describe('odata.parser grammar', function () {
         assert.ok(ast.$filter.right.value instanceof Date);
     });
 
+    it('should parse numbers okay', function(){
+        var ast = parser.parse('$filter=status eq 3');
+        assert.equal(ast.$filter.right.value, 3);
+    });
+
+    it('should parse negative numbers okay', function(){
+        var ast = parser.parse('$filter=status eq -3');
+        assert.equal(ast.$filter.right.value, -3);
+    });
+
     // it('xxxxx', function () {
     //     var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
 
