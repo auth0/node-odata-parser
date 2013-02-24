@@ -184,6 +184,12 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.value, -3);
     });
 
+    it('should parse $expand and return an array of identifier paths', function () {
+        var ast = parser.parse('$expand=Category,Products/Suppliers');
+        assert.equal(ast.$expand[0], 'Category');
+        assert.equal(ast.$expand[1], 'Products/Suppliers');
+    });
+
     // it('xxxxx', function () {
     //     var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
 
