@@ -71,8 +71,8 @@ describe('odata.parser grammar', function () {
 
         var ast = parser.parse('$orderby=ReleaseDate desc, Rating');
 
-        assert.equal(ast.$orderby.ReleaseDate, "desc");
-        assert.equal(ast.$orderby.Rating, "asc");
+        assert.equal(ast.$orderby[0].ReleaseDate, 'desc');
+        assert.equal(ast.$orderby[1].Rating, 'asc');
 
     });
 
