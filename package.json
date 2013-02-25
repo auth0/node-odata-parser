@@ -4,7 +4,7 @@
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
-    "test":       "rm -f lib/odata-parser && npm run-script prepublish && mocha -R spec",
+    "test":       "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec",
     "prepublish": "pegjs src/odata.pegjs lib/odata-parser.js"
   },
   "dependencies": {},
