@@ -187,8 +187,17 @@ top                         =   "$top=" a:INT { return { '$top': ~~a }; }
                             /   "$top=" .* { return {"error": 'invalid $top parameter'}; }
 
 // $expand
-expand                      =   "$expand=" identifier
+expand                      =   "$expand=" list:expandList { return { "$expand": list }; }
                             /   "$expand=" .* { return {"error": 'invalid $expand parameter'}; }
+
+expandList                  =   i:identifierPath list:("," WSP? l:expandList {return l;})? {
+                                    if (list === "") list = [];
+                                    if (require('util').isArray(list[0])) {
+                                        list = list[0];
+                                    }
+                                    list.unshift(i);
+                                    return list;
+                                }
 
 //$skip
 skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
@@ -203,13 +212,7 @@ inlinecount                 =   "$inlinecount=" unreserved*
 
 // $orderby
 orderby                     =   "$orderby=" list:orderbyList { 
-                                    //convert array to obj
-                                    var result = {};
-                                    for(var i in list){
-                                        var name = Object.keys(list[i])[0];
-                                        result[name] = list[i][name];
-                                    }
-                                    return { "$orderby": result }; }
+                                    return { "$orderby": list }; }
                             /   "$orderby=" .* { return {"error": 'invalid $orderby parameter'}; }
 
 orderbyList                 = i:(id:identifier ord:(WSP ("asc"/"desc"))? { 

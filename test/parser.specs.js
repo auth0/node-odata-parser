@@ -71,8 +71,8 @@ describe('odata.parser grammar', function () {
 
         var ast = parser.parse('$orderby=ReleaseDate desc, Rating');
 
-        assert.equal(ast.$orderby.ReleaseDate, "desc");
-        assert.equal(ast.$orderby.Rating, "asc");
+        assert.equal(ast.$orderby[0].ReleaseDate, 'desc');
+        assert.equal(ast.$orderby[1].Rating, 'asc');
 
     });
 
@@ -182,6 +182,12 @@ describe('odata.parser grammar', function () {
     it('should parse negative numbers okay', function(){
         var ast = parser.parse('$filter=status eq -3');
         assert.equal(ast.$filter.right.value, -3);
+    });
+
+    it('should parse $expand and return an array of identifier paths', function () {
+        var ast = parser.parse('$expand=Category,Products/Suppliers');
+        assert.equal(ast.$expand[0], 'Category');
+        assert.equal(ast.$expand[1], 'Products/Suppliers');
     });
 
     // it('xxxxx', function () {
