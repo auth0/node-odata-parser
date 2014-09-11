@@ -175,10 +175,20 @@ describe('odata.parser grammar', function () {
     });
 
     it('should parse numbers okay', function(){
-        var ast = parser.parse('$filter=status eq 3');
-        assert.equal(ast.$filter.right.value, 3);
+        var ast = parser.parse('$filter=status eq 35');
+        assert.equal(ast.$filter.right.value, 35);
+    });
+    
+    it('should parse larger digit numbers okay', function(){
+        var ast = parser.parse('$filter=status eq 67823456');
+        assert.equal(ast.$filter.right.value, 67823456);
     });
 
+    it('should parse rational numbers okay', function(){
+        var ast = parser.parse('$filter=status gt 43.5');
+        assert.equal(ast.$filter.right.value, 43.5, 0.001);
+    });
+    
     it('should parse negative numbers okay', function(){
         var ast = parser.parse('$filter=status eq -3');
         assert.equal(ast.$filter.right.value, -3);
