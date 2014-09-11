@@ -32,14 +32,14 @@ SQUOTE                      =   "%x27" / "'"
 primitiveLiteral            =   null /
                                 binary / 
                                 boolean /
-                                byte /
                                 dateTime /
                                 dateTimeOffset /
                                 decimal /
                                 double /
                                 guid / 
                                 int32 /
-                                int64 / 
+                                int64 /
+                                byte / 
                                 sbyte /
                                 single /
                                 string
@@ -88,7 +88,15 @@ dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
                                 dateTimeBody sign zeroToTwelve
 
 decimal                     =
-                               sign:sign digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return parseInt(digit + '.' + decimal) * (sign === '-' ? -1 : 1); }
+                               sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { 
+                                    var d_val = '', dec_val = ''; 
+                                    for(var i = 0; i < digit.length; i++) { 
+                                        d_val+= digit[i]; 
+                                    }
+                                    for( var i = 0; i < decimal.length; i++ ) {
+                                        dec_val += decimal[i];
+                                    }
+                                    return parseInt(d_val) + '.' + parseInt(dec_val) * (sign === '-' ? -1 : 1); }
                              / sign:sign digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
 
 double                      =   (  
@@ -101,7 +109,13 @@ double                      =   (
 
 guid                        =   "guid" SQUOTE HEXDIG8 "-" HEXDIG4 "-" HEXDIG4 "-" HEXDIG8 HEXDIG4 SQUOTE
 
-int32                       =   sign:sign? digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
+int32                       =   sign:sign? digit:DIGIT+ { 
+                                    var val = ''; 
+                                    for(var i = 0; i < digit.length; i++) { 
+                                        val+= digit[i]; 
+                                    }
+                                    return parseInt(val) * (sign === '-' ? -1 : 1); 
+                                }
                                 // numbers in the range from -2147483648 to 2147483647
 
 int64                       =   sign? DIGIT+ ( "L" / "l" )?
