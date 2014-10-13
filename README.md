@@ -11,7 +11,7 @@ npm install odata-parser
 ```javascript
 var parser = require("odata-parser");
 
-var ast = parser.parse("$top=10&$skip=5&$select")
+var ast = parser.parse("$top=10&$skip=5&$select=foo")
 
 util.inspect(ast)
 ```
