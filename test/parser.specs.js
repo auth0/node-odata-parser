@@ -160,7 +160,57 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.args[1].name, "Data");
 
     });
-   
+
+    ['tolower', 'toupper', 'trim'].forEach(function (func) {
+      it('should parse ' + func + ' $filter', function () {
+          var ast = parser.parse("$filter=" + func + "(value) eq 'test'");
+
+          assert.equal(ast.$filter.type, "eq");
+
+          assert.equal(ast.$filter.left.type, "functioncall");
+          assert.equal(ast.$filter.left.func, func);
+          assert.equal(ast.$filter.left.args[0].type, "property");
+          assert.equal(ast.$filter.left.args[0].name, "value");
+
+          assert.equal(ast.$filter.right.type, "literal");
+          assert.equal(ast.$filter.right.value, "test");
+      });
+    });
+
+    ['year', 'month', 'day', 'hour', 'minute', 'second'].forEach(function (func) {
+      it('should parse ' + func + ' $filter', function () {
+        var ast = parser.parse("$filter=" + func + "(value) gt 0");
+
+          assert.equal(ast.$filter.type, "gt");
+
+          assert.equal(ast.$filter.left.type, "functioncall");
+          assert.equal(ast.$filter.left.func, func);
+          assert.equal(ast.$filter.left.args[0].type, "property");
+          assert.equal(ast.$filter.left.args[0].name, "value");
+
+          assert.equal(ast.$filter.right.type, "literal");
+          assert.equal(ast.$filter.right.value, "0");
+      });
+    });
+
+    ['indexof', 'concat', 'substring', 'replace'].forEach(function (func) {
+      it('should parse ' + func + ' $filter', function () {
+        var ast = parser.parse("$filter=" + func + "('haystack', needle) eq 'test'");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.func, func);
+        assert.equal(ast.$filter.left.args[0].type, "literal");
+        assert.equal(ast.$filter.left.args[0].value, "haystack");
+        assert.equal(ast.$filter.left.args[1].type, "property");
+        assert.equal(ast.$filter.left.args[1].name, "needle");
+
+        assert.equal(ast.$filter.right.type, "literal");
+        assert.equal(ast.$filter.right.value, "test");
+      });
+    });
+
     it('should return an error if invalid value', function() {
 
         var ast = parser.parse("$top=foo");
