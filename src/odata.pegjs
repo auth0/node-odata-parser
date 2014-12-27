@@ -295,7 +295,7 @@ booleanFunc                 =  f:booleanFunctions2Args "(" arg0:part "," WSP? ar
                                     }
                                 }
 
-otherFunctions1Arg          = "tolower" / "toupper" / "trim" / "len" / "year" /
+otherFunctions1Arg          = "tolower" / "toupper" / "trim" / "length" / "year" /
                               "month" / "day" / "hour" / "minute" / "second" /
                               "round" / "floor" / "ceiling"
 
