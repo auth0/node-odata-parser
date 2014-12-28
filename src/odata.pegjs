@@ -31,7 +31,6 @@ SQUOTE                      =   "%x27" / "'"
  */
 primitiveLiteral            =   null /
                                 binary / 
-                                boolean /
                                 dateTime /
                                 dateTimeOffset /
                                 guid / 
@@ -42,6 +41,7 @@ primitiveLiteral            =   null /
                                 int64 / 
                                 byte /
                                 sbyte /
+                                boolean /
                                 string
 
 
