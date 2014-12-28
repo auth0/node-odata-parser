@@ -177,11 +177,15 @@ describe('odata.parser grammar', function () {
     it('should parse numbers okay', function(){
         var ast = parser.parse('$filter=status eq 3');
         assert.equal(ast.$filter.right.value, 3);
+        ast = parser.parse('$filter=status eq 34');
+        assert.equal(ast.$filter.right.value, 34);
     });
 
     it('should parse negative numbers okay', function(){
         var ast = parser.parse('$filter=status eq -3');
         assert.equal(ast.$filter.right.value, -3);
+        ast = parser.parse('$filter=status eq -34');
+        assert.equal(ast.$filter.right.value, -34);
     });
 
     it('should parse $expand and return an array of identifier paths', function () {

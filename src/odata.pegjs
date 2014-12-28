@@ -32,15 +32,15 @@ SQUOTE                      =   "%x27" / "'"
 primitiveLiteral            =   null /
                                 binary / 
                                 boolean /
-                                byte /
                                 dateTime /
                                 dateTimeOffset /
-                                decimal /
-                                double /
                                 guid / 
                                 int32 /
                                 int64 / 
+                                byte /
                                 sbyte /
+                                decimal /
+                                double /
                                 single /
                                 string
 
@@ -101,7 +101,7 @@ double                      =   (
 
 guid                        =   "guid" SQUOTE HEXDIG8 "-" HEXDIG4 "-" HEXDIG4 "-" HEXDIG8 HEXDIG4 SQUOTE
 
-int32                       =   sign:sign? digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
+int32                       =   sign:sign? digit:DIGIT+ { return parseInt(digit.join('')) * (sign === '-' ? -1 : 1); }
                                 // numbers in the range from -2147483648 to 2147483647
 
 int64                       =   sign? DIGIT+ ( "L" / "l" )?
