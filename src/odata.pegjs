@@ -35,13 +35,13 @@ primitiveLiteral            =   null /
                                 dateTime /
                                 dateTimeOffset /
                                 guid / 
+                                decimal /
+                                double /
+                                single /
                                 int32 /
                                 int64 / 
                                 byte /
                                 sbyte /
-                                decimal /
-                                double /
-                                single /
                                 string
 
 
@@ -87,9 +87,8 @@ dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
                                 dateTimeBody sign zeroToTwelve ":" zeroToSixty /
                                 dateTimeBody sign zeroToTwelve
 
-decimal                     =
-                               sign:sign digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return parseInt(digit + '.' + decimal) * (sign === '-' ? -1 : 1); }
-                             / sign:sign digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
+decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return sign + digit.join('') + '.' + decimal.join(''); } /
+                               sign? DIGIT+ ("M"/"m") { return sign + digit.join(''); }
 
 double                      =   (  
                                     sign DIGIT "." DIGIT+ ( "e" / "E" ) sign DIGIT+ /
