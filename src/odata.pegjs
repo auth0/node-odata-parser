@@ -35,8 +35,8 @@ primitiveLiteral            =   null /
                                 dateTime /
                                 dateTimeOffset /
                                 guid / 
-                                decimal /
                                 double /
+                                decimal /
                                 single /
                                 int32 /
                                 int64 / 
@@ -90,13 +90,10 @@ dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
 decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return sign + digit.join('') + '.' + decimal.join(''); } /
                                sign? DIGIT+ ("M"/"m") { return sign + digit.join(''); }
 
-double                      =   (  
-                                    sign DIGIT "." DIGIT+ ( "e" / "E" ) sign DIGIT+ /
-                                    sign DIGIT* "." DIGIT+ /
-                                    sign DIGIT+
-                                ) ("D" / "d") /
-                                nanInfinity ( "D" / "d" )?
-
+double                      =  sign:sign? digit:DIGIT "." decimal:DIGIT+ ("e" / "E") signexp:sign? exp:DIGIT+ ("D" / "d")? { return sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join(''); } /
+                               sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("D" / "d") { return sign + digit.join('') + '.' + decimal.join(''); } /
+                               sign:sign? digit:DIGIT+ ("D" / "d") { return sign + digit.join(''); } /
+                               nanInfinity ("D" / "d")?
 
 guid                        =   "guid" SQUOTE HEXDIG8 "-" HEXDIG4 "-" HEXDIG4 "-" HEXDIG8 HEXDIG4 SQUOTE
 
