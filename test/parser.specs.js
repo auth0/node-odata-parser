@@ -190,6 +190,14 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$expand[1], 'Products/Suppliers');
     });
 
+    it('should parse $format okay', function () {
+        var ast = parser.parse('$format=application/atom+xml');
+        assert.equal(ast.$format, 'application/atom+xml');
+
+        ast = parser.parse('$format=');
+        assert.equal(ast.error, 'invalid $format parameter');
+    });
+
     // it('xxxxx', function () {
     //     var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
 
