@@ -282,7 +282,7 @@ booleanFunc                 =  f:booleanFunctions2Args "(" arg0:part "," WSP? ar
                                         func: f,
                                         args: [arg0, arg1]
                                     }
-                                } / 
+                                } /
                                 "IsOf(" arg0:part ")" {
                                     return {
                                         type: "functioncall",
@@ -291,8 +291,43 @@ booleanFunc                 =  f:booleanFunctions2Args "(" arg0:part "," WSP? ar
                                     }
                                 }
 
+otherFunctions1Arg          = "tolower" / "toupper" / "trim" / "length" / "year" /
+                              "month" / "day" / "hour" / "minute" / "second" /
+                              "round" / "floor" / "ceiling"
 
-cond                        = a:part WSP op:op WSP b:part { 
+otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: f,
+                                      args: [arg0]
+                                  }
+                              }
+
+otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
+
+otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:part ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: f,
+                                      args: [arg0, arg1]
+                                  }
+                              } /
+                              "substring(" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: "substring",
+                                      args: [arg0, arg1, ag2]
+                                  }
+                              } /
+                              "replace(" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: "replace",
+                                      args: [arg0, arg1, ag2]
+                                  }
+                              }
+
+cond                        = a:part WSP op:op WSP b:part {
                                     return {
                                         type: op,
                                         left: a,
@@ -300,7 +335,9 @@ cond                        = a:part WSP op:op WSP b:part {
                                     };
                                 } / booleanFunc
 
-part                        =   booleanFunc / 
+part                        =   booleanFunc /
+                                otherFunc2 /
+                                otherFunc1 /
                                 l:primitiveLiteral {
                                     return {
                                         type: 'literal',
