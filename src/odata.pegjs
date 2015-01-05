@@ -203,7 +203,7 @@ skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
 format                      =   "$format=" v:.+ { return {'$format': v.join('') }; }
                             /   "$format=" .* { return {"error": 'invalid $format parameter'}; }
 //$inlinecount
-inlinecount                 =   "$inlinecount=" unreserved*
+inlinecount                 =   "$inlinecount=" v:("allpages" / "none") { return {'$inlinecount': v }; }
                             /   "$inlinecount=" .* { return {"error": 'invalid $inlinecount parameter'}; }
 
 // $orderby

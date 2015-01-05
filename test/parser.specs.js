@@ -269,6 +269,20 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$expand[1], 'Products/Suppliers');
     });
 
+    it('should allow only valid values for $inlinecount', function () {
+        var ast = parser.parse('$inlinecount=allpages');
+        assert.equal(ast.$inlinecount, 'allpages');
+
+        ast = parser.parse('$inlinecount=none');
+        assert.equal(ast.$inlinecount, 'none');
+
+        ast = parser.parse('$inlinecount=');
+        assert.equal(ast.error, 'invalid $inlinecount parameter');
+
+        ast = parser.parse('$inlinecount=test');
+        assert.equal(ast.error, 'invalid $inlinecount parameter');
+    });
+
     it('should parse $format okay', function () {
         var ast = parser.parse('$format=application/atom+xml');
         assert.equal(ast.$format, 'application/atom+xml');
