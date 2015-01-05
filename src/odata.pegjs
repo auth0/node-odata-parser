@@ -31,17 +31,17 @@ SQUOTE                      =   "%x27" / "'"
  */
 primitiveLiteral            =   null /
                                 binary / 
-                                boolean /
-                                byte /
                                 dateTime /
                                 dateTimeOffset /
-                                decimal /
-                                double /
                                 guid / 
+                                double /
+                                decimal /
+                                single /
                                 int32 /
                                 int64 / 
+                                byte /
                                 sbyte /
-                                single /
+                                boolean /
                                 string
 
 
@@ -87,21 +87,17 @@ dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
                                 dateTimeBody sign zeroToTwelve ":" zeroToSixty /
                                 dateTimeBody sign zeroToTwelve
 
-decimal                     =
-                               sign:sign digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return parseInt(digit + '.' + decimal) * (sign === '-' ? -1 : 1); }
-                             / sign:sign digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
+decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return sign + digit.join('') + '.' + decimal.join(''); } /
+                               sign? DIGIT+ ("M"/"m") { return sign + digit.join(''); }
 
-double                      =   (  
-                                    sign DIGIT "." DIGIT+ ( "e" / "E" ) sign DIGIT+ /
-                                    sign DIGIT* "." DIGIT+ /
-                                    sign DIGIT+
-                                ) ("D" / "d") /
-                                nanInfinity ( "D" / "d" )?
-
+double                      =  sign:sign? digit:DIGIT "." decimal:DIGIT+ ("e" / "E") signexp:sign? exp:DIGIT+ ("D" / "d")? { return sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join(''); } /
+                               sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("D" / "d") { return sign + digit.join('') + '.' + decimal.join(''); } /
+                               sign:sign? digit:DIGIT+ ("D" / "d") { return sign + digit.join(''); } /
+                               nanInfinity ("D" / "d")?
 
 guid                        =   "guid" SQUOTE HEXDIG8 "-" HEXDIG4 "-" HEXDIG4 "-" HEXDIG8 HEXDIG4 SQUOTE
 
-int32                       =   sign:sign? digit:DIGIT+ { return parseInt(digit) * (sign === '-' ? -1 : 1); }
+int32                       =   sign:sign? digit:DIGIT+ { return parseInt(digit.join('')) * (sign === '-' ? -1 : 1); }
                                 // numbers in the range from -2147483648 to 2147483647
 
 int64                       =   sign? DIGIT+ ( "L" / "l" )?

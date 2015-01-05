@@ -174,14 +174,43 @@ describe('odata.parser grammar', function () {
         assert.ok(ast.$filter.right.value instanceof Date);
     });
 
+    it('should parse boolean okay', function(){
+        var ast = parser.parse('$filter=status eq true');
+        assert.equal(ast.$filter.right.value, true);
+        var ast = parser.parse('$filter=status eq false');
+        assert.equal(ast.$filter.right.value, false);
+    });
+
     it('should parse numbers okay', function(){
         var ast = parser.parse('$filter=status eq 3');
         assert.equal(ast.$filter.right.value, 3);
+        // Test multiple digits - problem of not joining digits to array
+        ast = parser.parse('$filter=status eq 34');
+        assert.equal(ast.$filter.right.value, 34);
+        // Test number starting with 1 - problem of boolean rule order
+        ast = parser.parse('$filter=status eq 12');
+        assert.equal(ast.$filter.right.value, 12);
     });
 
     it('should parse negative numbers okay', function(){
         var ast = parser.parse('$filter=status eq -3');
         assert.equal(ast.$filter.right.value, -3);
+        ast = parser.parse('$filter=status eq -34');
+        assert.equal(ast.$filter.right.value, -34);
+    });
+
+    it('should parse decimal numbers okay', function(){
+        var ast = parser.parse('$filter=status eq 3.4');
+        assert.equal(ast.$filter.right.value, '3.4');
+        ast = parser.parse('$filter=status eq -3.4');
+        assert.equal(ast.$filter.right.value, '-3.4');
+    });
+
+    it('should parse double numbers okay', function(){
+        var ast = parser.parse('$filter=status eq 3.4e1');
+        assert.equal(ast.$filter.right.value, '3.4e1');
+        ast = parser.parse('$filter=status eq -3.4e-1');
+        assert.equal(ast.$filter.right.value, '-3.4e-1');
     });
 
     it('should parse $expand and return an array of identifier paths', function () {
