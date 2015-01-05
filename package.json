@@ -10,13 +10,16 @@
   "dependencies": {},
   "devDependencies": {
     "pegjs": "0.7.0",
-    "mocha": "*"
+    "mocha": "2.1.0"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/auth0/node-odata-parser"
+  },
   "keywords": [
     "odata",
     "parser"
   ],
-  "author": "qraftlabs",
+  "author": "auth0",
   "license": "MIT"
 }
