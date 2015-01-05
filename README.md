@@ -89,7 +89,3 @@ restuls in:
     }
 }
 ```
-
-## License
-
-MIT - qraftlabs - 2012
