@@ -1,10 +1,10 @@
 {
   "name": "odata-parser",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
-    "test":       "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec",
+    "test": "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec",
     "prepublish": "pegjs src/odata.pegjs lib/odata-parser.js"
   },
   "dependencies": {},
