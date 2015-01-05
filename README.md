@@ -1,5 +1,7 @@
 OData query string parser for node.js based on [pegjs](http://pegjs.majda.cz/).
 
+[![Build Status](https://travis-ci.org/auth0/node-odata-parser.svg)](https://travis-ci.org/auth0/node-odata-parser)
+
 ## Installation
 
 ```
@@ -19,10 +21,10 @@ util.inspect(ast)
 will result in:
 
 ```javascript
-{ 
+{
   '$top': 10,
   '$skip': 5,
-  '$select': [ 'foo' ] 
+  '$select': [ 'foo' ]
 }
 ```
 
