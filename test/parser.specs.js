@@ -291,6 +291,16 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.error, 'invalid $format parameter');
     });
 
+    it('should parse long paths in $filter conditions', function () {
+        var ast = parser.parse("$filter=publisher/president/likes/author/firstname eq 'John'");
+        assert.equal(ast.$filter.left.name, "publisher/president/likes/author/firstname");
+    });
+
+    it('should parse $callback', function () {
+        var ast = parser.parse("$callback=jQuery191039675481244921684_1424879147656");
+        assert.equal(ast.$callback, "jQuery191039675481244921684_1424879147656");
+    });
+
     // it('xxxxx', function () {
     //     var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
 
