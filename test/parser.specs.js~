@@ -86,15 +86,6 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.type, "literal");
         assert.equal(ast.$filter.right.value, "Jef");
     });
-
-    it('should parse $filter with subproperty', function () {
-	var ast = parser.parse("$filter=User/Name eq 'Jef'");
-	assert.equal(ast.$filter.type, "eq");
-	assert.equal(ast.$filter.left.type, "property");
-	assert.equal(ast.$filter.left.name, "User/Name");
-	assert.equal(ast.$filter.right.type, "literal");
-	assert.equal(ast.$filter.right.value, "Jef");
-    });
     
     it('should parse multiple conditions in a $filter', function () {
 
