@@ -178,6 +178,9 @@ identifier                  =
  * OData query options
  */
 
+// callback
+callback                    =   "$callback=" a:identifier { return { '$callback': a }; }
+
 // $top
 top                         =   "$top=" a:INT { return { '$top': ~~a }; }
                             /   "$top=" .* { return {"error": 'invalid $top parameter'}; }
@@ -231,12 +234,10 @@ select                      =   "$select=" list:selectList { return { "$select":
                             /   "$select=" .* { return {"error": 'invalid $select parameter'}; }
 
 identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
-                                    if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
                                     }
-                                    list.unshift("/" + i);
-                                    return list;
+                                    return "/" + i + list;
                                 }
 identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
 selectList                  =   
@@ -344,7 +345,7 @@ part                        =   booleanFunc /
                                         value: l
                                     };
                                 } /
-                                (u:identifier { 
+                                (u:identifierPath {
                                     return { 
                                         type: 'property', name: u
                                     }; 
@@ -384,6 +385,7 @@ exp                         =
                                 format /
                                 inlinecount /
                                 select /
+                                callback /
                                 unsupported
 
 query                       = list:expList {
