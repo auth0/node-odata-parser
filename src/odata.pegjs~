@@ -344,7 +344,7 @@ part                        =   booleanFunc /
                                         value: l
                                     };
                                 } /
-                                (u:identifierPath { 
+                                (u:identifier { 
                                     return { 
                                         type: 'property', name: u
                                     }; 
