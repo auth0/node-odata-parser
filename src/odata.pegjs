@@ -165,7 +165,8 @@ unreserved                  = [a-zA-Z0-9-_]
 //pctEncodedUnescaped =       = "%" [01346789A-F] HEXDIG
 //                            / "%2" [013456789A-F]
 //                            / "%5" [0-9ABDEF]
-validstring                 = a:[^']* { return a.join(''); }
+validstring                 = a:([^']/escapedQuote)* { return a.join('').replace(/('')/g, "'"); }
+escapedQuote                = a:"''" { return a; }
 identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); }
 identifier                  =
                                 a:identifierPart list:("." i:identifier {return i;})? {
