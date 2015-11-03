@@ -160,7 +160,7 @@ nanInfinity                 =   nan / negativeInfinity / positiveInfinity
 
 unreserved                  = a:[a-zA-Z0-9-_]+ { return a.join(''); }
 validstring                 = a:[^']* { return a.join(''); }
-identifierPart              = a:[a-zA-Z] b:unreserved { return a + b; }
+identifierPart              = a:[a-zA-Z] b:unreserved? { return a + b; }
 identifier                  = 
                                 a:identifierPart list:("." i:identifier {return i;})? {
                                     if (list === "") list = [];
