@@ -88,7 +88,7 @@ dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
                                 dateTimeBody sign zeroToTwelve
 
 decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return sign + digit.join('') + '.' + decimal.join(''); } /
-                               sign? DIGIT+ ("M"/"m") { return sign + digit.join(''); }
+                               sign:sign? digit:DIGIT+ ("M"/"m") { return sign + digit.join(''); }
 
 double                      =  sign:sign? digit:DIGIT "." decimal:DIGIT+ ("e" / "E") signexp:sign? exp:DIGIT+ ("D" / "d")? { return sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join(''); } /
                                sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("D" / "d") { return sign + digit.join('') + '.' + decimal.join(''); } /
