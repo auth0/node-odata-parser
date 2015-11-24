@@ -211,6 +211,26 @@ describe('odata.parser grammar', function () {
       });
     });
 
+    ['substring', 'replace'].forEach(function (func) {
+      it('should parse ' + func + ' $filter with 3 args', function() {
+        var ast = parser.parse("$filter=" + func + "('haystack', needle, foo) eq 'test'");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.func, func);
+        assert.equal(ast.$filter.left.args[0].type, "literal");
+        assert.equal(ast.$filter.left.args[0].value, "haystack");
+        assert.equal(ast.$filter.left.args[1].type, "property");
+        assert.equal(ast.$filter.left.args[1].name, "needle");
+        assert.equal(ast.$filter.left.args[2].type, "property");
+        assert.equal(ast.$filter.left.args[2].name, "foo");
+
+        assert.equal(ast.$filter.right.type, "literal");
+        assert.equal(ast.$filter.right.value, "test");
+      });
+    });
+
     it('should return an error if invalid value', function() {
 
         var ast = parser.parse("$top=foo");
