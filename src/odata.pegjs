@@ -1,7 +1,7 @@
 /*
  * OData query expression grammar.
  * Note: use this gramar with pegjs:
- *  - http://pegjs.majda.cz/ 
+ *  - http://pegjs.majda.cz/
  *  - https://github.com/dmajda/pegjs
  */
 
@@ -25,40 +25,40 @@ SQUOTE                      =   "%x27" / "'"
 
 // end: Basic cons
 
-/* 
+/*
  * OData literals - adapted from OData ABNF:
  *  - http://www.odata.org/media/30002/OData%20ABNF.html
  */
 primitiveLiteral            =   null /
-                                binary / 
+                                binary /
                                 dateTime /
                                 dateTimeOffset /
-                                guid / 
+                                guid /
                                 double /
                                 decimal /
                                 single /
                                 int32 /
-                                int64 / 
+                                int64 /
                                 byte /
                                 sbyte /
                                 boolean /
                                 string
 
 
-null                        =   "null" ( "'" identifier "'" )? 
-                                // The optional qualifiedTypeName is used to specify what type this null value should be considered. 
-                                // Knowing the type is useful for function overload resolution purposes. 
+null                        =   "null" ( "'" identifier "'" )?
+                                // The optional qualifiedTypeName is used to specify what type this null value should be considered.
+                                // Knowing the type is useful for function overload resolution purposes.
 
 binary                      =   ( "%d88" / "binary" )
-                                SQUOTE 
-                                HEXDIG HEXDIG 
+                                SQUOTE
+                                HEXDIG HEXDIG
                                 SQUOTE
                                 // note: "X" is case sensitive "binary" is not hence using the character code.
 
-boolean                     =   "true" { return true; } / 
-                                "1" { return true; } / 
-                                "false" { return false; } / 
-                                "0" { return false; } 
+boolean                     =   "true" { return true; } /
+                                "1" { return true; } /
+                                "false" { return false; } /
+                                "0" { return false; }
 
 byte                        =   DIGIT DIGIT DIGIT
                                 // numbers in the range from 0 to 257
@@ -75,7 +75,7 @@ dateTimeBodyC               =  a:dateTimeBodyB "." b:nanoSeconds { return a + ".
 dateTimeBodyD               =  a:dateTimeBodyC "-" b:zeroToTwentyFour ":" c:zeroToSixty {
                                     return a + "-" + b + ":" + c;
                                 }
-dateTimeBody                =   
+dateTimeBody                =
                                dateTimeBodyD
                              / dateTimeBodyC
                              / dateTimeBodyB
@@ -106,7 +106,7 @@ int64                       =   sign? DIGIT+ ( "L" / "l" )?
 sbyte                       =   sign? DIGIT DIGIT? DIGIT?
                                 // numbers in the range from -128 to 127
 
-single                      =   (  
+single                      =   (
                                     sign DIGIT "." DIGIT+ ( "e" / "E" ) sign DIGIT+ /
                                     sign DIGIT* "." DIGIT+ /
                                     sign DIGIT+
@@ -120,7 +120,7 @@ oneToNine                   =   [1-9]
 
 zeroToTwelve                =   a:"0" b:[1-9] { return a + b;} / a:"1" b:[0-2] { return a + b; }
 
-zeroToThirteen              =   zeroToTwelve / "13" 
+zeroToThirteen              =   zeroToTwelve / "13"
 
 zeroToSixty                 =   "60" / a:[0-5] b:DIGIT { return a + b; }
 
@@ -160,8 +160,8 @@ nanInfinity                 =   nan / negativeInfinity / positiveInfinity
 
 unreserved                  = a:[a-zA-Z0-9-_]+ { return a.join(''); }
 validstring                 = a:[^']* { return a.join(''); }
-identifierPart              = a:[a-zA-Z] b:unreserved { return a + b; }
-identifier                  = 
+identifierPart              = a:[_a-zA-Z] b:unreserved { return a + b; }
+identifier                  =
                                 a:identifierPart list:("." i:identifier {return i;})? {
                                     if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
@@ -170,7 +170,7 @@ identifier                  =
                                     list.unshift(a);
                                     return list.join('.');
                                 }
-                                
+
 
 // --
 
@@ -210,15 +210,15 @@ inlinecount                 =   "$inlinecount=" v:("allpages" / "none") { return
                             /   "$inlinecount=" .* { return {"error": 'invalid $inlinecount parameter'}; }
 
 // $orderby
-orderby                     =   "$orderby=" list:orderbyList { 
+orderby                     =   "$orderby=" list:orderbyList {
                                     return { "$orderby": list }; }
                             /   "$orderby=" .* { return {"error": 'invalid $orderby parameter'}; }
 
-orderbyList                 = i:(id:identifier ord:(WSP ("asc"/"desc"))? { 
+orderbyList                 = i:(id:identifier ord:(WSP ("asc"/"desc"))? {
                                     var result = {};
                                     result[id] = ord[1] || 'asc';
                                     return result;
-                                }) 
+                                })
                               list:("," WSP? l:orderbyList{return l;})? {
 
                                     if (list === "") list = [];
@@ -240,7 +240,7 @@ identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
                                     return "/" + i + list;
                                 }
 identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
-selectList                  =   
+selectList                  =
                                 i:(a:identifierPath b:".*"?{return a + b;}/"*") list:("," WSP? l:selectList {return l;})? {
                                     if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
@@ -251,15 +251,15 @@ selectList                  =
                                 }
 
 //filter
-filter                      =   "$filter=" list:filterExpr { 
-                                    return { 
+filter                      =   "$filter=" list:filterExpr {
+                                    return {
                                         "$filter": list
-                                    }; 
+                                    };
                                 }
                             /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
 
-filterExpr                  = 
-                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? / 
+filterExpr                  =
+                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? /
                               left:cond right:( WSP type:("and"/"or") WSP value:filterExpr{
                                     return { type: type, value: value}
                               })? {
@@ -346,12 +346,12 @@ part                        =   booleanFunc /
                                     };
                                 } /
                                 (u:identifierPath {
-                                    return { 
+                                    return {
                                         type: 'property', name: u
-                                    }; 
+                                    };
                                 })
-                                
-op                          = 
+
+op                          =
                                 "eq" /
                                 "ne" /
                                 "lt" /
@@ -374,10 +374,10 @@ unsupported                 =   "$" er:.* { return { error: "unsupported method:
 
 expList                     = e:exp "&" el:expList { return [e].concat(el); } /
                               e:exp { return [e]; }
-                              
+
 
 exp                         =
-                                expand / 
+                                expand /
                                 filter /
                                 orderby /
                                 skip /
