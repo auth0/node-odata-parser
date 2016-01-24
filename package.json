@@ -6,6 +6,7 @@
   "scripts": {
     "test": "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec",
     "prepublish": "pegjs src/odata.pegjs lib/odata-parser.js"
+    "preinstall": "pegjs src/odata.pegjs lib/odata-parser.js"
   },
   "dependencies": {},
   "devDependencies": {
