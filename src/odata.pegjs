@@ -5,6 +5,20 @@
  *  - https://github.com/dmajda/pegjs
  */
 
+{
+  function filterExprHelper(left, right){
+    if (right) {
+        return {
+            type: right.type,
+            left: left,
+            right: right.value
+        }
+    } else {
+        return left;
+    }
+  }
+}
+
 start                       = query
 
 /*
@@ -259,20 +273,15 @@ filter                      =   "$filter=" list:filterExpr {
                             /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
 
 filterExpr                  = 
-                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? / 
+                              left:("(" WSP? filter:filterExpr WSP? ")"{return filter}) right:( WSP type:("and"/"or") WSP value:filterExpr{
+                                    return { type: type, value: value}
+                              })? {
+                                return filterExprHelper(left, right);
+                              } / 
                               left:cond right:( WSP type:("and"/"or") WSP value:filterExpr{
                                     return { type: type, value: value}
                               })? {
-
-                                if (right) {
-                                    return {
-                                        type: right.type,
-                                        left: left,
-                                        right: right.value
-                                    }
-                                } else {
-                                    return left;
-                                }
+                                return filterExprHelper(left, right);
                               }
 
 booleanFunctions2Args       = "substringof" / "endswith" / "startswith" / "IsOf"
