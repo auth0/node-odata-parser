@@ -1,11 +1,11 @@
 /*
  * OData query expression grammar.
  * Note: use this gramar with pegjs:
- *  - http://pegjs.majda.cz/ 
+ *  - http://pegjs.majda.cz/
  *  - https://github.com/dmajda/pegjs
  */
 
-start                       = query
+start                       = url
 
 /*
  * Basic cons.
@@ -23,42 +23,44 @@ HEXDIG8                     =   HEXDIG4 HEXDIG8
 
 SQUOTE                      =   "%x27" / "'"
 
+DQUOTE                      =   "%x22" / "\""
+
 // end: Basic cons
 
-/* 
+/*
  * OData literals - adapted from OData ABNF:
  *  - http://www.odata.org/media/30002/OData%20ABNF.html
  */
 primitiveLiteral            =   null /
-                                binary / 
+                                binary /
                                 dateTime /
                                 dateTimeOffset /
-                                guid / 
+                                guid /
                                 double /
                                 decimal /
                                 single /
                                 int32 /
-                                int64 / 
+                                int64 /
                                 byte /
                                 sbyte /
                                 boolean /
                                 string
 
 
-null                        =   "null" ( "'" identifier "'" )? 
-                                // The optional qualifiedTypeName is used to specify what type this null value should be considered. 
-                                // Knowing the type is useful for function overload resolution purposes. 
+null                        =   "null" ( "'" identifier "'" )?
+                                // The optional qualifiedTypeName is used to specify what type this null value should be considered.
+                                // Knowing the type is useful for function overload resolution purposes.
 
 binary                      =   ( "%d88" / "binary" )
-                                SQUOTE 
-                                HEXDIG HEXDIG 
+                                SQUOTE
+                                HEXDIG HEXDIG
                                 SQUOTE
                                 // note: "X" is case sensitive "binary" is not hence using the character code.
 
-boolean                     =   "true" { return true; } / 
-                                "1" { return true; } / 
-                                "false" { return false; } / 
-                                "0" { return false; } 
+boolean                     =   "true" { return true; } /
+                                "1" { return true; } /
+                                "false" { return false; } /
+                                "0" { return false; }
 
 byte                        =   DIGIT DIGIT DIGIT
                                 // numbers in the range from 0 to 257
@@ -75,7 +77,7 @@ dateTimeBodyC               =  a:dateTimeBodyB "." b:nanoSeconds { return a + ".
 dateTimeBodyD               =  a:dateTimeBodyC "-" b:zeroToTwentyFour ":" c:zeroToSixty {
                                     return a + "-" + b + ":" + c;
                                 }
-dateTimeBody                =   
+dateTimeBody                =
                                dateTimeBodyD
                              / dateTimeBodyC
                              / dateTimeBodyB
@@ -106,7 +108,7 @@ int64                       =   sign? DIGIT+ ( "L" / "l" )?
 sbyte                       =   sign? DIGIT DIGIT? DIGIT?
                                 // numbers in the range from -128 to 127
 
-single                      =   (  
+single                      =   (
                                     sign DIGIT "." DIGIT+ ( "e" / "E" ) sign DIGIT+ /
                                     sign DIGIT* "." DIGIT+ /
                                     sign DIGIT+
@@ -120,7 +122,7 @@ oneToNine                   =   [1-9]
 
 zeroToTwelve                =   a:"0" b:[1-9] { return a + b;} / a:"1" b:[0-2] { return a + b; }
 
-zeroToThirteen              =   zeroToTwelve / "13" 
+zeroToThirteen              =   zeroToTwelve / "13"
 
 zeroToSixty                 =   "60" / a:[0-5] b:DIGIT { return a + b; }
 
@@ -158,10 +160,14 @@ nanInfinity                 =   nan / negativeInfinity / positiveInfinity
  * OData identifiers
  */
 
-unreserved                  = a:[a-zA-Z0-9-_]+ { return a.join(''); }
+unreserved                  = [a-zA-Z0-9-_]
+
+//pctEncodedUnescaped =       = "%" [01346789A-F] HEXDIG
+//                            / "%2" [013456789A-F]
+//                            / "%5" [0-9ABDEF]
 validstring                 = a:[^']* { return a.join(''); }
-identifierPart              = a:[a-zA-Z] b:unreserved { return a + b; }
-identifier                  = 
+identifierPart              = a:[a-zA-Z] b:unreserved+ { return a + b.join(''); }
+identifier                  =
                                 a:identifierPart list:("." i:identifier {return i;})? {
                                     if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
@@ -170,7 +176,9 @@ identifier                  =
                                     list.unshift(a);
                                     return list.join('.');
                                 }
-                                
+
+// Fixme: this is wrong.
+QCHAR_NO_AMP_DQUOTE         = [^"]
 
 // --
 
@@ -186,17 +194,56 @@ top                         =   "$top=" a:INT { return { '$top': ~~a }; }
                             /   "$top=" .* { return {"error": 'invalid $top parameter'}; }
 
 // $expand
-expand                      =   "$expand=" list:expandList { return { "$expand": list }; }
+expand                      =   "$expand=" list:expandList {
+                                    if (typeof list.error === 'string') {
+                                      return { "error": list.error }
+                                    }
+                                    return { "$expand": list };
+                                }
                             /   "$expand=" .* { return {"error": 'invalid $expand parameter'}; }
 
-expandList                  =   i:identifierPath list:("," WSP? l:expandList {return l;})? {
+expandList                  =   p:identifierPath opts:("(" WSP? o:expandOptionList WSP? ")" { return o; })? list:("," WSP? l:expandList {return l;})? {
+                                    if (opts === "") opts = [];
+                                    var options = {};
+                                    for(var i in opts){
+
+                                        if (opts[i] !== "") {
+                                            var paramName = Object.keys(opts[i])[0]; //ie: $top
+                                            options[paramName] = opts[i][paramName];
+                                            if (paramName === 'error') {
+                                              return { "error": opts[i][paramName] };
+                                            }
+                                        }
+                                    }
                                     if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
                                     }
-                                    list.unshift(i);
+                                    if (typeof list.error === 'string') {
+                                      return { "error": list.error }
+                                    }
+                                    // FIXME: Make this just look at the navigation property, not the ancillary type information,
+                                    // and store the rest of the type information elsewhere in the structure.
+                                    if (list.findIndex(function (entry) { return entry.path === p; }) !== -1) {
+                                      return {"error": 'duplicate $expand navigationProperty'};
+                                    }
+                                    list.unshift({ path: p, options: options });
                                     return list;
                                 }
+
+expandOption                =
+                                expand /
+                                filter /
+                                search /
+                                orderby /
+                                skip /
+                                top /
+                                inlinecount /
+                                select /
+                                unsupported
+
+expandOptionList            = e:expandOption WSP? ";" WSP? el:expandOptionList { return [e].concat(el); } /
+                              e:expandOption { return [e]; }
 
 //$skip
 skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
@@ -209,16 +256,31 @@ format                      =   "$format=" v:.+ { return {'$format': v.join('') 
 inlinecount                 =   "$inlinecount=" v:("allpages" / "none") { return {'$inlinecount': v }; }
                             /   "$inlinecount=" .* { return {"error": 'invalid $inlinecount parameter'}; }
 
+search                      =   "$search=" WSP? s:searchExpr { return { '$search': s } }
+                            /   "$search=" .* { return {"error": 'invalid $search parameter'}; }
+
+searchExpr                  =	 s:searchTerm { return s }
+
+// FIXME: Support NOT n:('NOT' WSP)?
+searchTerm                  = s:positiveSearchTerm { return s }
+
+positiveSearchTerm          = s:searchPhrase { return s }
+														// / s:searchWord
+
+searchPhrase                = DQUOTE s:QCHAR_NO_AMP_DQUOTE+ DQUOTE { return s.join('') }
+
+//searchWord                // Not implementing yet, but can't be AND, OR, or NOT and can match one or more of any character from the Unicode categories L or Nl
+
 // $orderby
-orderby                     =   "$orderby=" list:orderbyList { 
+orderby                     =   "$orderby=" list:orderbyList {
                                     return { "$orderby": list }; }
                             /   "$orderby=" .* { return {"error": 'invalid $orderby parameter'}; }
 
-orderbyList                 = i:(id:identifier ord:(WSP ("asc"/"desc"))? { 
+orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
                                     var result = {};
                                     result[id] = ord[1] || 'asc';
                                     return result;
-                                }) 
+                                })
                               list:("," WSP? l:orderbyList{return l;})? {
 
                                     if (list === "") list = [];
@@ -240,7 +302,7 @@ identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
                                     return "/" + i + list;
                                 }
 identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
-selectList                  =   
+selectList                  =
                                 i:(a:identifierPath b:".*"?{return a + b;}/"*") list:("," WSP? l:selectList {return l;})? {
                                     if (list === "") list = [];
                                     if (require('util').isArray(list[0])) {
@@ -251,15 +313,15 @@ selectList                  =
                                 }
 
 //filter
-filter                      =   "$filter=" list:filterExpr { 
-                                    return { 
+filter                      =   "$filter=" list:filterExpr {
+                                    return {
                                         "$filter": list
-                                    }; 
+                                    };
                                 }
                             /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
 
-filterExpr                  = 
-                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? / 
+filterExpr                  =
+                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? /
                               left:cond right:( WSP type:("and"/"or") WSP value:filterExpr{
                                     return { type: type, value: value}
                               })? {
@@ -275,7 +337,7 @@ filterExpr                  =
                                 }
                               }
 
-booleanFunctions2Args       = "substringof" / "endswith" / "startswith" / "IsOf"
+booleanFunctions2Args       = "substringof" / "endswith" / "startswith" / "IsOf" / "contains"
 
 booleanFunc                 =  f:booleanFunctions2Args "(" arg0:part "," WSP? arg1:part ")" {
                                     return {
@@ -346,12 +408,12 @@ part                        =   booleanFunc /
                                     };
                                 } /
                                 (u:identifierPath {
-                                    return { 
+                                    return {
                                         type: 'property', name: u
-                                    }; 
+                                    };
                                 })
-                                
-op                          = 
+
+op                          =
                                 "eq" /
                                 "ne" /
                                 "lt" /
@@ -374,10 +436,10 @@ unsupported                 =   "$" er:.* { return { error: "unsupported method:
 
 expList                     = e:exp "&" el:expList { return [e].concat(el); } /
                               e:exp { return [e]; }
-                              
+
 
 exp                         =
-                                expand / 
+                                expand /
                                 filter /
                                 orderby /
                                 skip /
@@ -386,6 +448,7 @@ exp                         =
                                 inlinecount /
                                 select /
                                 callback /
+                                search /
                                 unsupported
 
 query                       = list:expList {
@@ -402,3 +465,69 @@ query                       = list:expList {
                                     }
                                     return result;
                                 }
+/*
+ * OData path
+ */
+
+predicate                   = n:identifier "=" v:primitiveLiteral {
+                                  return {
+                                      type: 'property',
+                                      name: n,
+                                      value: v
+                                  };
+                              }
+
+predicateList               = e:predicate "," WSP? l:predicateList {
+                                  return [e].concat(l);
+                              } /
+                              e:predicate {
+                                  return [e];
+                              } /
+                              v:primitiveLiteral {
+                                  return [{
+                                      type: 'literal',
+                                      value: v
+                                  }];
+                              }
+
+resource                    = n:identifier "(" p:predicateList ")" {
+                                  return {
+                                      name: n,
+                                      predicates: p
+                                  };
+                              } /
+                              n:identifier {
+                                  return {
+                                      name: n
+                                  };
+                              } /
+                              v:("$value" / "$count") {
+                                  return {
+                                      name: v
+                                  };
+                              }
+
+path                        = e:resource "/" l:path {
+                                  return [e].concat(l);
+                              } /
+                              e:resource {
+                                  return [e];
+                              }
+// end: OData path
+
+/*
+ * OData url
+ */
+
+url                         = p:path "?" q:query {
+                                  q.$path = p;
+                                  return q;
+                              } /
+                              p:path {
+                                  return {$path: p};
+                              } /
+                              q:query {
+                                  return q;
+                              }
+
+// end: OData url

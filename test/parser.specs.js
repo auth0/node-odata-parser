@@ -1,3 +1,5 @@
+
+
 var assert = require('assert');
 var parser = require("../lib");
 
@@ -43,7 +45,7 @@ describe('odata.parser grammar', function () {
     });
 
     it('should accept * and , and / in $select', function () {
-        
+
         var ast = parser.parse('$select=*,Category/Name');
 
         assert.equal(ast.$select[0], '*');
@@ -66,7 +68,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$select[0], 'DemoService.*');
     });
-    
+
     it('should parse order by', function () {
 
         var ast = parser.parse('$orderby=ReleaseDate desc, Rating');
@@ -86,7 +88,7 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.type, "literal");
         assert.equal(ast.$filter.right.value, "Jef");
     });
-    
+
     it('should parse multiple conditions in a $filter', function () {
 
         var ast = parser.parse("$filter=Name eq 'John' and LastName lt 'Doe'");
@@ -110,7 +112,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$filter.type, "functioncall");
         assert.equal(ast.$filter.func, "substringof");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "nginx");
 
@@ -122,7 +124,7 @@ describe('odata.parser grammar', function () {
     it('should parse substringof $filter with empty string', function () {
 
         var ast = parser.parse("$filter=substringof('', Data)");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "");
 
@@ -133,7 +135,7 @@ describe('odata.parser grammar', function () {
         var ast = parser.parse("$filter=substringof('nginx', Data) eq true");
 
         assert.equal(ast.$filter.type, "eq");
-        
+
 
         assert.equal(ast.$filter.left.type, "functioncall");
         assert.equal(ast.$filter.left.func, "substringof");
@@ -152,12 +154,27 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$filter.type, "functioncall");
         assert.equal(ast.$filter.func, "startswith");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "nginx");
 
         assert.equal(ast.$filter.args[1].type, "property");
         assert.equal(ast.$filter.args[1].name, "Data");
+
+    });
+
+    it('should parse startswith $filter', function () {
+
+        var ast = parser.parse("$filter=contains(Data, 'nginx')");
+
+        assert.equal(ast.$filter.type, "functioncall");
+        assert.equal(ast.$filter.func, "contains");
+
+        assert.equal(ast.$filter.args[0].type, "property");
+        assert.equal(ast.$filter.args[0].name, "Data");
+
+        assert.equal(ast.$filter.args[1].type, "literal");
+        assert.equal(ast.$filter.args[1].value, "nginx");
 
     });
 
@@ -217,7 +234,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.error, "invalid $top parameter");
     });
-    
+
 
     it('should convert dates to javascript Date', function () {
         var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
@@ -264,9 +281,18 @@ describe('odata.parser grammar', function () {
     });
 
     it('should parse $expand and return an array of identifier paths', function () {
-        var ast = parser.parse('$expand=Category,Products/Suppliers');
-        assert.equal(ast.$expand[0], 'Category');
-        assert.equal(ast.$expand[1], 'Products/Suppliers');
+        var ast = parser.parse('$expand=Category,Products/Suppliers,Items($expand=ItemRatings;$select=ItemDetails;$search="foo")');
+        assert.equal(ast.$expand[0].path, 'Category');
+        assert.equal(ast.$expand[1].path, 'Products/Suppliers');
+        assert.equal(ast.$expand[2].path, 'Items');
+        assert.equal(ast.$expand[2].options.$expand[0].path, 'ItemRatings');
+        assert.equal(ast.$expand[2].options.$select[0], 'ItemDetails');
+        assert.equal(ast.$expand[2].options.$search, 'foo');
+    });
+
+    it('should not allow duplicate expand paths', function () {
+        var ast = parser.parse('$expand=ItemRatings,ItemRatings');
+        assert.equal(ast.error, 'duplicate $expand navigationProperty');
     });
 
     it('should allow only valid values for $inlinecount', function () {
@@ -291,6 +317,14 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.error, 'invalid $format parameter');
     });
 
+    it('should parse $search okay', function () {
+        var ast = parser.parse('$search="foo bar baz"');
+        assert.equal(ast.$search, 'foo bar baz');
+
+        ast = parser.parse('$search=');
+        assert.equal(ast.error, 'invalid $search parameter');
+    });
+
     it('should parse long paths in $filter conditions', function () {
         var ast = parser.parse("$filter=publisher/president/likes/author/firstname eq 'John'");
         assert.equal(ast.$filter.left.name, "publisher/president/likes/author/firstname");
@@ -306,4 +340,62 @@ describe('odata.parser grammar', function () {
 
     //     console.log(JSON.stringify(ast, 0, 2));
     // });
+});
+
+describe('odata path parser grammar', function () {
+
+    it('should parse single resource', function () {
+        var ast = parser.parse('Customers');
+        assert.equal(ast.$path[0].name, 'Customers');
+    });
+
+    it('should parse resource with literal predicate', function () {
+        var ast = parser.parse('Customers(1)');
+        assert.equal(ast.$path[0].name, 'Customers');
+        assert.equal(ast.$path[0].predicates[0].type, 'literal');
+        assert.equal(ast.$path[0].predicates[0].value, 1);
+    });
+
+    it('should parse resource with property predicate', function () {
+        var ast = parser.parse('Customers(CustomerID=1)');
+        assert.equal(ast.$path[0].name, 'Customers');
+        assert.equal(ast.$path[0].predicates[0].type, 'property');
+        assert.equal(ast.$path[0].predicates[0].name, 'CustomerID');
+        assert.equal(ast.$path[0].predicates[0].value, 1);
+    });
+
+    it('should parse resource with two property predicates', function () {
+        var ast = parser.parse('Customers(CustomerID=1,ContactName=\'Joe\')');
+        assert.equal(ast.$path[0].name, 'Customers');
+        assert.equal(ast.$path[0].predicates[0].type, 'property');
+        assert.equal(ast.$path[0].predicates[0].name, 'CustomerID');
+        assert.equal(ast.$path[0].predicates[0].value, 1);
+        assert.equal(ast.$path[0].predicates[1].type, 'property');
+        assert.equal(ast.$path[0].predicates[1].name, 'ContactName');
+        assert.equal(ast.$path[0].predicates[1].value, 'Joe');
+    });
+
+    it('should parse two resources', function () {
+        var ast = parser.parse('Customers(1)/ContactName');
+        assert.equal(ast.$path[0].name, 'Customers');
+        assert.equal(ast.$path[1].name, 'ContactName');
+    });
+
+    it('should parse resources starting with $', function () {
+        var ast = parser.parse('Customers(1)/$value');
+        assert.equal(ast.$path[1].name, '$value');
+        var ast = parser.parse('Customers/$count');
+        assert.equal(ast.$path[1].name, '$count');
+    });
+
+});
+
+describe('odata path and query parser grammar', function () {
+
+    it('should parse both path and query', function () {
+        var ast = parser.parse('Customers?$top=10');
+        assert.equal(ast.$path[0].name, 'Customers');
+        assert.equal(ast.$top, 10);
+    });
+
 });
