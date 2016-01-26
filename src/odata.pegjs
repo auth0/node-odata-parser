@@ -253,8 +253,8 @@ skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
 format                      =   "$format=" v:.+ { return {'$format': v.join('') }; }
                             /   "$format=" .* { return {"error": 'invalid $format parameter'}; }
 //$inlinecount
-inlinecount                 =   "$inlinecount=" v:("allpages" / "none") { return {'$inlinecount': v }; }
-                            /   "$inlinecount=" .* { return {"error": 'invalid $inlinecount parameter'}; }
+inlinecount                 =   "$count=" v:boolean { return {'$count': v }; }
+                            /   "$count=" .* { return {"error": 'invalid $count parameter'}; }
 
 search                      =   "$search=" WSP? s:searchExpr { return { '$search': s } }
                             /   "$search=" .* { return {"error": 'invalid $search parameter'}; }
@@ -500,18 +500,25 @@ resource                    = n:identifier "(" p:predicateList ")" {
                                   return {
                                       name: n
                                   };
+                              }
+
+path                        = e:resource "/" l:endPath {
+                                  return [e].concat(l);
+                              } /
+                              e:resource {
+                                  return [e];
+                              }
+
+endPath                     = e:resource "/" l:endPath {
+                                  return [e].concat(l);
+                              } /
+                              e:resource {
+                                  return [e];
                               } /
                               v:("$value" / "$count") {
                                   return {
                                       name: v
                                   };
-                              }
-
-path                        = e:resource "/" l:path {
-                                  return [e].concat(l);
-                              } /
-                              e:resource {
-                                  return [e];
                               }
 // end: OData path
 

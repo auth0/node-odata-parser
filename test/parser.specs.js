@@ -295,18 +295,18 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.error, 'duplicate $expand navigationProperty');
     });
 
-    it('should allow only valid values for $inlinecount', function () {
-        var ast = parser.parse('$inlinecount=allpages');
-        assert.equal(ast.$inlinecount, 'allpages');
+    it('should allow only valid values for $count', function () {
+        var ast = parser.parse('$count=true');
+        assert.equal(ast.$count, true);
 
-        ast = parser.parse('$inlinecount=none');
-        assert.equal(ast.$inlinecount, 'none');
+        ast = parser.parse('$count=false');
+        assert.equal(ast.$count, false);
 
-        ast = parser.parse('$inlinecount=');
-        assert.equal(ast.error, 'invalid $inlinecount parameter');
+        ast = parser.parse('$count=');
+        assert.equal(ast.error, 'invalid $count parameter');
 
-        ast = parser.parse('$inlinecount=test');
-        assert.equal(ast.error, 'invalid $inlinecount parameter');
+        ast = parser.parse('$count=test');
+        assert.equal(ast.error, 'invalid $count parameter');
     });
 
     it('should parse $format okay', function () {
