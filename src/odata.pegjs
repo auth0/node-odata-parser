@@ -166,7 +166,7 @@ unreserved                  = [a-zA-Z0-9-_]
 //                            / "%2" [013456789A-F]
 //                            / "%5" [0-9ABDEF]
 validstring                 = a:[^']* { return a.join(''); }
-identifierPart              = a:[a-zA-Z] b:unreserved+ { return a + b.join(''); }
+identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); }
 identifier                  =
                                 a:identifierPart list:("." i:identifier {return i;})? {
                                     if (list === "") list = [];

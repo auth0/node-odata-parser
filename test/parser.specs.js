@@ -37,6 +37,14 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$select[0], 'Rating');
     });
 
+    it('should parse single character identifiers', function () {
+
+        var ast = parser.parse('$select=a,b');
+
+        assert.equal(ast.$select[0], 'a');
+        assert.equal(ast.$select[1], 'b');
+    });
+
     it('should accept * in $select', function () {
 
         var ast = parser.parse('$select=*');
