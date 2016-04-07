@@ -86,7 +86,42 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.type, "literal");
         assert.equal(ast.$filter.right.value, "Jef");
     });
-    
+
+    it('should parse condition in brackets in a $filter', function () {
+
+        var ast = parser.parse("$filter=(Name eq 'Jef')");
+
+        assert.equal(ast.$filter.type, "eq");
+        assert.equal(ast.$filter.left.type, "property");
+        assert.equal(ast.$filter.left.name, "Name");
+        assert.equal(ast.$filter.right.type, "literal");
+        assert.equal(ast.$filter.right.value, "Jef");
+    });
+
+    it('should parse expression consisting expression that uses brackets in a $filter', function () {
+        var ast = parser.parse("$filter=(Name eq 'Jane') or (age gt '18' and age lt '35')");
+
+        assert.equal(ast.$filter.type, "or");
+        assert.equal(ast.$filter.left.type, "eq");
+        assert.equal(ast.$filter.left.left.type, "property");
+        assert.equal(ast.$filter.left.left.name, "Name");
+        assert.equal(ast.$filter.left.right.type, "literal");
+        assert.equal(ast.$filter.left.right.value, "Jane");
+
+        assert.equal(ast.$filter.right.type, "and");
+        assert.equal(ast.$filter.right.left.type, "gt");
+        assert.equal(ast.$filter.right.left.left.type, "property");
+        assert.equal(ast.$filter.right.left.left.name, "age");
+        assert.equal(ast.$filter.right.left.right.type, "literal");
+        assert.equal(ast.$filter.right.left.right.value, "18");
+
+        assert.equal(ast.$filter.right.right.type, "lt");
+        assert.equal(ast.$filter.right.right.left.type, "property");
+        assert.equal(ast.$filter.right.right.left.name, "age");
+        assert.equal(ast.$filter.right.right.right.type, "literal");
+        assert.equal(ast.$filter.right.right.right.value, "35");
+    });
+
     it('should parse multiple conditions in a $filter', function () {
 
         var ast = parser.parse("$filter=Name eq 'John' and LastName lt 'Doe'");
