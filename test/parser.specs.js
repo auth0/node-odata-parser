@@ -228,6 +228,20 @@ describe('odata.parser grammar', function () {
       });
     });
 
+    it('should parse year datetimeoffset $filter', function() {
+        var ast = parser.parse("$filter=my_year lt year(datetimeoffset'2016-01-01T01:01:01Z')");
+
+        assert.equal(ast.$filter.type, "lt");
+
+        assert.equal(ast.$filter.left.type, "property");
+        assert.equal(ast.$filter.left.name, "my_year");
+
+        assert.equal(ast.$filter.right.type, "functioncall");
+        assert.equal(ast.$filter.right.func, "year");
+        assert.equal(ast.$filter.right.args[0].type, "literal");
+        assert.ok(ast.$filter.right.args[0].value instanceof Date);
+    });
+
     ['indexof', 'concat', 'substring', 'replace'].forEach(function (func) {
       it('should parse ' + func + ' $filter', function () {
         var ast = parser.parse("$filter=" + func + "('haystack', needle) eq 'test'");
@@ -240,6 +254,26 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.left.args[0].value, "haystack");
         assert.equal(ast.$filter.left.args[1].type, "property");
         assert.equal(ast.$filter.left.args[1].name, "needle");
+
+        assert.equal(ast.$filter.right.type, "literal");
+        assert.equal(ast.$filter.right.value, "test");
+      });
+    });
+
+    ['substring', 'replace'].forEach(function (func) {
+      it('should parse ' + func + ' $filter with 3 args', function() {
+        var ast = parser.parse("$filter=" + func + "('haystack', needle, foo) eq 'test'");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.func, func);
+        assert.equal(ast.$filter.left.args[0].type, "literal");
+        assert.equal(ast.$filter.left.args[0].value, "haystack");
+        assert.equal(ast.$filter.left.args[1].type, "property");
+        assert.equal(ast.$filter.left.args[1].name, "needle");
+        assert.equal(ast.$filter.left.args[2].type, "property");
+        assert.equal(ast.$filter.left.args[2].name, "foo");
 
         assert.equal(ast.$filter.right.type, "literal");
         assert.equal(ast.$filter.right.value, "test");

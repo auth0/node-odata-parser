@@ -65,12 +65,12 @@ byte                        =   DIGIT DIGIT DIGIT
 
 dateTime                    =   "datetime" SQUOTE a:dateTimeBody SQUOTE { return new Date(a); }
 
-dateTimeOffset              =   "datetimeoffset" SQUOTE dateTimeOffsetBody SQUOTE
+dateTimeOffset              =   "datetimeoffset" SQUOTE a:dateTimeOffsetBody SQUOTE { return new Date(a); }
 
-dateTimeBodyA               =  a:year "-" b:month "-" c:day "T" d:hour ":" e:minute "Z"? {
+dateTimeBodyA               =  a:year "-" b:month "-" c:day "T" d:hour ":" e:minute {
                                     return a + '-' + b + '-' + c + "T" + d + ":" + e;
                                 }
-dateTimeBodyB               =  a:dateTimeBodyA ":" b:second "Z"? { return a + ":" + b; }
+dateTimeBodyB               =  a:dateTimeBodyA ":" b:second { return a + ":" + b; }
 dateTimeBodyC               =  a:dateTimeBodyB "." b:nanoSeconds { return a + "." + b; }
 dateTimeBodyD               =  a:dateTimeBodyC "-" b:zeroToTwentyFour ":" c:zeroToSixty {
                                     return a + "-" + b + ":" + c;
@@ -81,14 +81,14 @@ dateTimeBody                =
                              / dateTimeBodyB
                              / dateTimeBodyA
 
-dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
-                                dateTimeBody sign zeroToThirteen ":00" /
-                                dateTimeBody sign zeroToThirteen /
-                                dateTimeBody sign zeroToTwelve ":" zeroToSixty /
-                                dateTimeBody sign zeroToTwelve
+dateTimeOffsetBody          =   a:dateTimeBody "Z" { return a + "Z"; } /
+                                a:dateTimeBody b:sign c:zeroToThirteen ":00" { return a + b + c + ":00"; } /
+                                a:dateTimeBody b:sign c:zeroToThirteen { return a + b + c; } /
+                                a:dateTimeBody b:sign c:zeroToTwelve ":" d:zeroToSixty { return a + b + c + ":" + d; } /
+                                a:dateTimeBody b:sign c:zeroToTwelve { return a + b + c; }
 
 decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return sign + digit.join('') + '.' + decimal.join(''); } /
-                               sign? DIGIT+ ("M"/"m") { return sign + digit.join(''); }
+                               sign:sign? digit:DIGIT+ ("M"/"m") { return sign + digit.join(''); }
 
 double                      =  sign:sign? digit:DIGIT "." decimal:DIGIT+ ("e" / "E") signexp:sign? exp:DIGIT+ ("D" / "d")? { return sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join(''); } /
                                sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("D" / "d") { return sign + digit.join('') + '.' + decimal.join(''); } /
@@ -323,18 +323,18 @@ otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:pa
                                       args: [arg0, arg1]
                                   }
                               } /
-                              "substring(" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
+                              "substring" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
                                   return {
                                       type: "functioncall",
                                       func: "substring",
-                                      args: [arg0, arg1, ag2]
+                                      args: [arg0, arg1, arg2]
                                   }
                               } /
-                              "replace(" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
+                              "replace" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
                                   return {
                                       type: "functioncall",
                                       func: "replace",
-                                      args: [arg0, arg1, ag2]
+                                      args: [arg0, arg1, arg2]
                                   }
                               }
 
