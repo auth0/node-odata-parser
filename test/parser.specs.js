@@ -67,6 +67,13 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$select[0], 'DemoService.*');
     });
 
+    it('should accept single-char field in $select', function () {
+
+        var ast = parser.parse('$select=r');
+
+        assert.equal(ast.$select[0], 'r');
+    });
+    
     it('should parse order by', function () {
 
         var ast = parser.parse('$orderby=ReleaseDate desc, Rating');
