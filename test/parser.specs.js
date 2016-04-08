@@ -43,7 +43,7 @@ describe('odata.parser grammar', function () {
     });
 
     it('should accept * and , and / in $select', function () {
-        
+
         var ast = parser.parse('$select=*,Category/Name');
 
         assert.equal(ast.$select[0], '*');
@@ -66,7 +66,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$select[0], 'DemoService.*');
     });
-    
+
     it('should parse order by', function () {
 
         var ast = parser.parse('$orderby=ReleaseDate desc, Rating');
@@ -145,7 +145,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$filter.type, "functioncall");
         assert.equal(ast.$filter.func, "substringof");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "nginx");
 
@@ -157,7 +157,7 @@ describe('odata.parser grammar', function () {
     it('should parse substringof $filter with empty string', function () {
 
         var ast = parser.parse("$filter=substringof('', Data)");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "");
 
@@ -168,7 +168,7 @@ describe('odata.parser grammar', function () {
         var ast = parser.parse("$filter=substringof('nginx', Data) eq true");
 
         assert.equal(ast.$filter.type, "eq");
-        
+
 
         assert.equal(ast.$filter.left.type, "functioncall");
         assert.equal(ast.$filter.left.func, "substringof");
@@ -187,7 +187,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$filter.type, "functioncall");
         assert.equal(ast.$filter.func, "startswith");
-        
+
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "nginx");
 
@@ -252,7 +252,7 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.error, "invalid $top parameter");
     });
-    
+
 
     it('should convert dates to javascript Date', function () {
         var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
@@ -334,6 +334,11 @@ describe('odata.parser grammar', function () {
     it('should parse $callback', function () {
         var ast = parser.parse("$callback=jQuery191039675481244921684_1424879147656");
         assert.equal(ast.$callback, "jQuery191039675481244921684_1424879147656");
+    });
+
+    it('should accept identifiers prefixed by _', function () {
+        var ast = parser.parse("$filter=_first_name eq 'John'");
+        assert.equal(ast.$filter.left.name, "_first_name");
     });
 
     // it('xxxxx', function () {
