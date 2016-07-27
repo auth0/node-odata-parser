@@ -97,6 +97,26 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.value, "Jef");
     });
 
+    it('should parse $filter containing quote', function () {
+
+        var ast = parser.parse("$filter=Name eq 'O''Neil'");
+
+        assert.equal(ast.$filter.type, "eq");
+        assert.equal(ast.$filter.left.type, "property");
+        assert.equal(ast.$filter.left.name, "Name");
+        assert.equal(ast.$filter.right.type, "literal");
+        assert.equal(ast.$filter.right.value, "O'Neil");
+    });
+
+    it('should parse $filter with subproperty', function () {
+      	var ast = parser.parse("$filter=User/Name eq 'Jef'");
+      	assert.equal(ast.$filter.type, "eq");
+      	assert.equal(ast.$filter.left.type, "property");
+      	assert.equal(ast.$filter.left.name, "User/Name");
+      	assert.equal(ast.$filter.right.type, "literal");
+      	assert.equal(ast.$filter.right.value, "Jef");
+    });
+
     it('should parse multiple conditions in a $filter', function () {
 
         var ast = parser.parse("$filter=Name eq 'John' and LastName lt 'Doe'");
@@ -135,6 +155,32 @@ describe('odata.parser grammar', function () {
 
         assert.equal(ast.$filter.args[0].type, "literal");
         assert.equal(ast.$filter.args[0].value, "");
+
+    });
+
+    it('should parse substringof $filter with string containing quote', function () {
+
+      var ast = parser.parse("$filter=substringof('ng''inx', Data)");
+      assert.equal(ast.$filter.args[0].type, "literal");
+      assert.equal(ast.$filter.args[0].value, "ng'inx");
+
+    });
+
+    it('should parse substringof $filter with string starting with quote', function () {
+
+      var ast = parser.parse("$filter=substringof('''nginx', Data)");
+
+      assert.equal(ast.$filter.args[0].type, "literal");
+      assert.equal(ast.$filter.args[0].value, "'nginx");
+
+    });
+
+    it('should parse substringof $filter with string ending with quote', function () {
+
+      var ast = parser.parse("$filter=substringof('nginx''', Data)");
+
+      assert.equal(ast.$filter.args[0].type, "literal");
+      assert.equal(ast.$filter.args[0].value, "nginx'");
 
     });
 
@@ -342,12 +388,6 @@ describe('odata.parser grammar', function () {
         var ast = parser.parse("$callback=jQuery191039675481244921684_1424879147656");
         assert.equal(ast.$callback, "jQuery191039675481244921684_1424879147656");
     });
-
-    // it('xxxxx', function () {
-    //     var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
-
-    //     console.log(JSON.stringify(ast, 0, 2));
-    // });
 });
 
 describe('odata path parser grammar', function () {
