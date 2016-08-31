@@ -367,6 +367,16 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
                                   }
                               }
 
+collectionFunc             = f:collectionFunctionsArg "(" arg0:cond ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: f,
+                                      args: [arg0]
+                                  }
+                              }
+
+collectionFunctionsArg     = "any" / "all"
+
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
 otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:part ")" {
@@ -401,6 +411,7 @@ cond                        = a:part WSP op:op WSP b:part {
 
 part                        =   booleanFunc /
                                 otherFunc2 /
+                                collectionFunc /
                                 otherFunc1 /
                                 l:primitiveLiteral {
                                     return {
