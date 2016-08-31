@@ -232,6 +232,34 @@ describe('odata.parser grammar', function () {
 
     });
 
+    it('should parse any(cond) eq true $filter', function () {
+
+        var ast = parser.parse("$filter=any(value eq 'test') eq true");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.func, "any");
+        assert.equal(ast.$filter.left.args[0].type, "eq");
+
+        assert.equal(ast.$filter.right.value.true);
+
+    });
+
+    it('should parse all(cond) eq true $filter', function () {
+
+        var ast = parser.parse("$filter=all(value eq 'test') eq true");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.func, "all");
+        assert.equal(ast.$filter.left.args[0].type, "eq");
+
+        assert.equal(ast.$filter.right.value.true);
+
+    });
+
     ['tolower', 'toupper', 'trim'].forEach(function (func) {
       it('should parse ' + func + ' $filter', function () {
           var ast = parser.parse("$filter=" + func + "(value) eq 'test'");
