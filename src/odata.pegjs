@@ -371,16 +371,33 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
     // this refers to the path to the set (e.g. the field in the record)
 // then the internal identifier (in the lambdaFunc), refers to the local variable. E.g. for x in listField
 
-collectionFuncExpr         = p:identifierPath "|" f:collectionFunctionsArg "(" arg0:lambdaFunc ")" {
+collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
                                   return {
-                                      path: p,
+                                      path: p.idPath,
                                       type: "functioncall",
-                                      func: f,
+                                      func: p.func,
                                       args: [arg0]
                                   }
                               }
 
-collectionFunctionsArg     = "any" / "all"
+// pegjs has a problem handling identifierPath/any(). This gets around it.
+idPathANDfuncArgExpr       = a:identifier b:idPartANDfuncArg* {
+                                 var idPath = [];
+                                 idPath.push(a);
+                                 for(var i in b) {
+                                    if (b[i].func) {
+                                        return {idPath:idPath.join('/'), func:b[i].func } ;
+                                    }
+                                    idPath.push(b[i]);
+                                 }
+                              }
+idPartANDfuncArg           = a:"/" b:identifier {
+                                    var collectionFunctionsArg = ["any", "all"]
+                                    if (collectionFunctionsArg.indexOf(b) !== -1) {
+                                      return {func:b}
+                                    }
+                                    return b;
+                             }
 
 lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
                                 return {
@@ -392,6 +409,7 @@ lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
 
 // do not let lambdaVar be a primitiveLiteral, because ambiguity with datetime (int:int)
 lambdaVar                  = identifierPart
+
 
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
