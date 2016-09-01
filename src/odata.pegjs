@@ -382,7 +382,7 @@ collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
 
 // pegjs has a problem handling identifierPath/any(). This gets around it.
 idPathANDfuncArgExpr       = a:identifier b:idPartANDfuncArg* {
-                                 // thorw if the last item in not a collectionFunction name
+                                 // throw if the last item in not a collectionFunction name
                                  var collectionFunctionsArg = ["any", "all"]
                                  if (collectionFunctionsArg.indexOf(b[b.length-1]) !== -1) {
                                     throw "Incorrect collection function name: " + b[b.length-1];

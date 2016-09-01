@@ -236,7 +236,7 @@ describe('odata.parser grammar', function () {
 
         var ast = parser.parse("$filter=linked_table/any_num_hops/string_list/any(list_item:list_item eq 'test') eq true");
 
-        // assert.equal(ast.$filter.type, "eq");
+        assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
         assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
@@ -255,7 +255,7 @@ describe('odata.parser grammar', function () {
 
         var ast = parser.parse("$filter=linked_table/any_num_hops/string_list/all(list_item:list_item eq 'test') eq true");
 
-        // assert.equal(ast.$filter.type, "eq");
+        assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
         assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
