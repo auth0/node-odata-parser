@@ -232,6 +232,43 @@ describe('odata.parser grammar', function () {
 
     });
 
+    it('should parse any(lambdaFunc) eq true $filter', function () {
+
+        var ast = parser.parse("$filter=linked_table/any_num_hops/string_list/any(list_item:list_item eq 'test') eq true");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
+        assert.equal(ast.$filter.left.func, "any");
+
+        assert.equal(ast.$filter.left.args[0].type, "eq");
+        assert.equal(ast.$filter.left.args[0].type, "eq");
+        assert.equal(ast.$filter.left.args[0].left, "list_item");
+        assert.equal(ast.$filter.left.args[0].right.value, "test");
+
+        assert.equal(ast.$filter.right.value.true);
+
+    });
+
+    it('should parse all(lambdaFunc) eq true $filter', function () {
+
+        var ast = parser.parse("$filter=linked_table/any_num_hops/string_list/all(list_item:list_item eq 'test') eq true");
+
+        assert.equal(ast.$filter.type, "eq");
+
+        assert.equal(ast.$filter.left.type, "functioncall");
+        assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
+        assert.equal(ast.$filter.left.func, "all");
+
+        assert.equal(ast.$filter.left.args[0].type, "eq");
+        assert.equal(ast.$filter.left.args[0].left, "list_item");
+        assert.equal(ast.$filter.left.args[0].right.value, "test");
+
+        assert.equal(ast.$filter.right.value.true);
+
+    });
+
     ['tolower', 'toupper', 'trim'].forEach(function (func) {
       it('should parse ' + func + ' $filter', function () {
           var ast = parser.parse("$filter=" + func + "(value) eq 'test'");

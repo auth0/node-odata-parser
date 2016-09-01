@@ -367,6 +367,55 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
                                   }
                               }
 
+// collection functions include a path expression at the start (unlike other field functions)
+    // this refers to the path to the set (e.g. the field in the record)
+// then the internal identifier (in the lambdaFunc), refers to the local variable. E.g. for x in listField
+
+collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
+                                  return {
+                                      path: p.idPath,
+                                      type: "functioncall",
+                                      func: p.func,
+                                      args: [arg0]
+                                  }
+                              }
+
+// pegjs has a problem handling identifierPath/any(). This gets around it.
+idPathANDfuncArgExpr       = a:identifier b:idPartANDfuncArg* {
+                                 // throw if the last item in not a collectionFunction name
+                                 var collectionFunctionsArg = ["any", "all"]
+                                 if (collectionFunctionsArg.indexOf(b[b.length-1]) !== -1) {
+                                    throw "Incorrect collection function name: " + b[b.length-1];
+                                 }
+                                 var idPath = [];
+                                 idPath.push(a);
+                                 for(var i in b) {
+                                    if (b[i].func) {
+                                        return {idPath:idPath.join('/'), func:b[i].func } ;
+                                    }
+                                    idPath.push(b[i]);
+                                 }
+                              }
+idPartANDfuncArg           = a:"/" b:identifier {
+                                var collectionFunctionsArg = ["any", "all"]
+                                if (collectionFunctionsArg.indexOf(b) !== -1) {
+                                  return {func:b}
+                                }
+                                return b;
+                             }
+
+lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
+                                return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                }
+                             }
+
+// do not let lambdaVar be a primitiveLiteral, because ambiguity with datetime (int:int)
+lambdaVar                  = identifierPart
+
+
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
 otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:part ")" {
@@ -399,7 +448,8 @@ cond                        = a:part WSP op:op WSP b:part {
                                     };
                                 } / booleanFunc
 
-part                        =   booleanFunc /
+part                        =   collectionFuncExpr /
+                                booleanFunc /
                                 otherFunc2 /
                                 otherFunc1 /
                                 l:primitiveLiteral {
