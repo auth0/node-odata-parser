@@ -382,6 +382,11 @@ collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
 
 // pegjs has a problem handling identifierPath/any(). This gets around it.
 idPathANDfuncArgExpr       = a:identifier b:idPartANDfuncArg* {
+                                 // thorw if the last item in not a collectionFunction name
+                                 var collectionFunctionsArg = ["any", "all"]
+                                 if (collectionFunctionsArg.indexOf(b[b.length-1]) !== -1) {
+                                    throw "Incorrect collection function name: " + b[b.length-1];
+                                 }
                                  var idPath = [];
                                  idPath.push(a);
                                  for(var i in b) {
@@ -392,11 +397,11 @@ idPathANDfuncArgExpr       = a:identifier b:idPartANDfuncArg* {
                                  }
                               }
 idPartANDfuncArg           = a:"/" b:identifier {
-                                    var collectionFunctionsArg = ["any", "all"]
-                                    if (collectionFunctionsArg.indexOf(b) !== -1) {
-                                      return {func:b}
-                                    }
-                                    return b;
+                                var collectionFunctionsArg = ["any", "all"]
+                                if (collectionFunctionsArg.indexOf(b) !== -1) {
+                                  return {func:b}
+                                }
+                                return b;
                              }
 
 lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
