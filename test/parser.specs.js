@@ -239,7 +239,7 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
-        assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
+        assert.equal(ast.$filter.left.name, "linked_table/any_num_hops/string_list");
         assert.equal(ast.$filter.left.func, "any");
 
         assert.equal(ast.$filter.left.args[0].type, "eq");
@@ -258,7 +258,7 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
-        assert.equal(ast.$filter.left.path, "linked_table/any_num_hops/string_list");
+        assert.equal(ast.$filter.left.name, "linked_table/any_num_hops/string_list");
         assert.equal(ast.$filter.left.func, "all");
 
         assert.equal(ast.$filter.left.args[0].type, "eq");

@@ -373,7 +373,7 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
 
 collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
                                   return {
-                                      path: p.idPath,
+                                      name: p.idPath,
                                       type: "functioncall",
                                       func: p.func,
                                       args: [arg0]
