@@ -1,6 +1,6 @@
 {
   "name": "@lanetix/odata-parser",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
