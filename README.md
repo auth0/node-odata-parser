@@ -96,7 +96,7 @@ If you have found a bug or if you have a feature request, please report them at 
 
 ## Author
 
-[Auth0](github.com/auth0)
+[Auth0](https://github.com/auth0)
 
 ## License
 
