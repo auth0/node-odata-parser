@@ -72,7 +72,7 @@ Using functions in filters
 parser.parse("$filter=substringof('nginx', Servers)")
 ```
 
-restuls in:
+results in:
 
 ```javascript
 {
@@ -96,7 +96,7 @@ If you have found a bug or if you have a feature request, please report them at 
 
 ## Author
 
-[Auth0](auth0.com)
+[Auth0](github.com/auth0)
 
 ## License
 
