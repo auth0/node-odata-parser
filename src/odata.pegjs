@@ -218,7 +218,7 @@ skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
                             /   "$skip=" .* { return {"error": 'invalid $skip parameter'}; }
 
 //$format
-format                      =   "$format=" v:.+ { return {'$format': v.join('') }; }
+format                      =   "$format=" v:[^&]+ { return {'$format': v.join('') }; }
                             /   "$format=" .* { return {"error": 'invalid $format parameter'}; }
 //$inlinecount
 inlinecount                 =   "$inlinecount=" v:("allpages" / "none") { return {'$inlinecount': v }; }
@@ -273,12 +273,12 @@ filter                      =   "$filter=" list:filterExpr {
                                 }
                             /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
 
-filterExpr                  = 
+filterExpr                  =
                               left:("(" WSP? filter:filterExpr WSP? ")"{return filter}) right:( WSP type:("and"/"or") WSP value:filterExpr{
                                     return { type: type, value: value}
                               })? {
                                 return filterExprHelper(left, right);
-                              } / 
+                              } /
                               left:cond right:( WSP type:("and"/"or") WSP value:filterExpr{
                                     return { type: type, value: value}
                               })? {
