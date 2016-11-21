@@ -371,6 +371,32 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.value, '-3.4e-1');
     });
 
+    it('should parse aliasIdentifier', function(){
+        var ast = parser.parse('$filter=closingDate eq @lx_date_this_week');
+        assert.equal(ast.$filter.right.type, 'alias');
+        assert.equal(ast.$filter.right.name, 'lx_date_this_week');
+    });
+
+    it('should parse aliasExpression', function(){
+        var ast = parser.parse('@lx_date_this_week=43242');
+        assert.equal(ast.aliasExpr.alias.type, 'alias');
+        assert.equal(ast.aliasExpr.alias.name, 'lx_date_this_week');
+        assert.equal(ast.aliasExpr.value.type, 'literal');
+        assert.equal(ast.aliasExpr.value.value, '43242');
+    });
+
+    it('should parse aliasExpression with cond', function(){
+        var ast = parser.parse("@lx_date_this_week=closingDate gt datetime'2012-09-27T21:12:59'");
+        assert.equal(ast.aliasExpr.alias.type, 'alias');
+        assert.equal(ast.aliasExpr.alias.name, 'lx_date_this_week');
+        assert.equal(ast.aliasExpr.value.type, 'gt');
+        assert.equal(ast.aliasExpr.value.left.type, 'property');
+        assert.equal(ast.aliasExpr.value.left.name, 'closingDate');
+        assert.equal(ast.aliasExpr.value.right.type, 'literal');
+        // AssertionError: 2012-09-27T21:12:59.000Z == '2012-09-27T21:12:59.000Z'
+    });
+
+
     it('should parse $expand and return an array of identifier paths', function () {
         var ast = parser.parse('$expand=Category,Products/Suppliers,Items($expand=ItemRatings;$select=ItemDetails;$search="foo")');
         assert.equal(ast.$expand[0].path, 'Category');

@@ -296,6 +296,14 @@ orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
 select                      =   "$select=" list:selectList { return { "$select":list }; }
                             /   "$select=" .* { return {"error": 'invalid $select parameter'}; }
 
+// denote when an identifier is an alias. So the mapper can search for the matching aliasExpr
+aliasIdentifier            = "@" a:identifier {
+                                return {
+                                    type:'alias',
+                                    name: a
+                                }
+                            }
+
 identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
@@ -415,7 +423,6 @@ lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
 // do not let lambdaVar be a primitiveLiteral, because ambiguity with datetime (int:int)
 lambdaVar                  = identifierPart
 
-
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
 otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:part ")" {
@@ -458,6 +465,7 @@ part                        =   collectionFuncExpr /
                                         value: l
                                     };
                                 } /
+                                aliasIdentifier /
                                 (u:identifierPath {
                                     return {
                                         type: 'property', name: u
@@ -489,7 +497,7 @@ expList                     = e:exp "&" el:expList { return [e].concat(el); } /
                               e:exp { return [e]; }
 
 
-exp                         =
+exp                         =   aliasExpr /
                                 expand /
                                 filter /
                                 orderby /
@@ -501,6 +509,20 @@ exp                         =
                                 callback /
                                 search /
                                 unsupported
+
+// because of the way that query works, each exp (e.g. filter, aliasExpr) can only have a single root
+aliasExpr                   = n:aliasIdentifier "=" v:aliasValue {
+                                  return { 'aliasExpr': {
+                                      alias: n,
+                                      value: v
+                                  }};
+                              }
+
+// from the odata spec: the aliasValue can be a cond, collection of literals, or a literal
+// we don't yet support a collection of literals. E.g. `@lx_colors:permitted=['red', 'green']`
+aliasValue                  = cond /
+                              part
+
 
 query                       = list:expList {
                                     //turn the array into an object like:
