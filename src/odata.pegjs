@@ -167,21 +167,51 @@ unreserved                  = [a-zA-Z0-9-_]
 //                            / "%5" [0-9ABDEF]
 validstring                 = a:([^']/escapedQuote)* { return a.join('').replace(/('')/g, "'"); }
 escapedQuote                = a:"''" { return a; }
-identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); }
-identifier                  =
-                                a:identifierPart list:("." i:identifier {return i;})? {
-                                    if (list === "") list = [];
-                                    if (require('util').isArray(list[0])) {
-                                        list = list[0];
-                                    }
-                                    list.unshift(a);
-                                    return list.join('.');
-                                }
 
 // Fixme: this is wrong.
 QCHAR_NO_AMP_DQUOTE         = [^"]
 
-// --
+identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); }
+
+identifier                  = identifierPart
+
+// denote when an identifier is an alias. So the mapper can search for the matching aliasExpr
+aliasIdentifier            = "@" a:identifier {
+                                return {
+                                    type:'alias',
+                                    name: a
+                                }
+                            }
+
+identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
+                                    if (require('util').isArray(list[0])) {
+                                        list = list[0];
+                                    }
+                                    return "/" + i + list;
+                                }
+
+identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
+
+identifierRoot              = aliasIdentifier /
+                              n:identifierPath u:unit? {
+                                  return {
+                                      type: 'property',
+                                      name: n,
+                                      unit: u
+                                  }
+                              }
+
+unit                        = "." u:unitArg "()" {
+                                return u ;
+                              }
+
+// everything which accepts a timestamp for unit extraction
+unitArg                    = "century" / "decade" / "year" / "month" / "week" / "day" /
+                              "date" / "day" / "hour" / "minute" / "second" /
+                              "dow" / "doy" / "epoch" / "isodow" / "isoyear" /
+                              "millennium" / "quarter"
+
+// end: OData identifiers
 
 /*
  * OData query options
@@ -292,25 +322,11 @@ orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
                                     return list;
                                 }
 
+
 //$select
 select                      =   "$select=" list:selectList { return { "$select":list }; }
                             /   "$select=" .* { return {"error": 'invalid $select parameter'}; }
 
-// denote when an identifier is an alias. So the mapper can search for the matching aliasExpr
-aliasIdentifier            = "@" a:identifier {
-                                return {
-                                    type:'alias',
-                                    name: a
-                                }
-                            }
-
-identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
-                                    if (require('util').isArray(list[0])) {
-                                        list = list[0];
-                                    }
-                                    return "/" + i + list;
-                                }
-identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
 selectList                  =
                                 i:(a:identifierPath b:".*"?{return a + b;}/"*") list:("," WSP? l:selectList {return l;})? {
                                     if (list === "") list = [];
@@ -320,6 +336,8 @@ selectList                  =
                                     list.unshift(i);
                                     return list;
                                 }
+
+
 
 //filter
 filter                      =   "$filter=" list:filterExpr {
@@ -455,30 +473,48 @@ cond                        = a:part WSP op:op WSP b:part {
                                     };
                                 } / booleanFunc
 
+/* Does not have operator precedence. (peg decides path per each token.) Use nesting. */
+mathCond                   = a:part WSP op:mathOp WSP b:part {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                }
+
 part                        =   collectionFuncExpr /
                                 booleanFunc /
                                 otherFunc2 /
                                 otherFunc1 /
+                                "(" WSP? c:mathCond WSP? ")" {
+                                  return c ;
+                                } /
                                 l:primitiveLiteral {
                                     return {
                                         type: 'literal',
                                         value: l
                                     };
                                 } /
-                                aliasIdentifier /
-                                (u:identifierPath {
-                                    return {
-                                        type: 'property', name: u
-                                    };
-                                })
+                                nowUnit /
+                                identifierRoot
 
+nowUnit                     = "now()" u:unit? {
+                                return {
+                                  type: "now",
+                                  unit: u
+                                }
+                              }
+
+/* op is used at the root cond expression of the subtree. The mathOp is used in the subtrees. */
 op                          =
                                 "eq" /
                                 "ne" /
                                 "lt" /
                                 "le" /
                                 "gt" /
-                                "ge" /
+                                "ge"
+
+mathOp                      =
                                 "add" /
                                 "sub" /
                                 "mul" /
@@ -538,6 +574,9 @@ query                       = list:expList {
                                     }
                                     return result;
                                 }
+
+// end: OData query
+
 /*
  * OData path
  */

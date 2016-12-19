@@ -371,6 +371,105 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.value, '-3.4e-1');
     });
 
+    it('should parse cond with eq|le|ge|lt|gt as the root, with the mathOp as the subtree', function(){
+        var ast = parser.parse('$filter=( 38 sub ( 83 add ( 8 mod 2 ) ) ) eq ( ( 2 mul 4 ) div 33 )');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'sub');
+        assert.equal(ast.$filter.left.left.type, 'literal');
+        assert.equal(ast.$filter.left.left.value, 38);
+        assert.equal(ast.$filter.left.right.type, 'add');
+        assert.equal(ast.$filter.left.right.left.type, 'literal');
+        assert.equal(ast.$filter.left.right.left.value, 83);
+        assert.equal(ast.$filter.left.right.right.type, 'mod');
+        assert.equal(ast.$filter.left.right.right.left.type, 'literal');
+        assert.equal(ast.$filter.left.right.right.left.value, 8);
+        assert.equal(ast.$filter.left.right.right.right.type, 'literal');
+        assert.equal(ast.$filter.left.right.right.right.value, 2);
+        assert.equal(ast.$filter.right.type, 'div');
+        assert.equal(ast.$filter.right.left.type, 'mul');
+        assert.equal(ast.$filter.right.left.left.type, 'literal');
+        assert.equal(ast.$filter.right.left.left.value, 2);
+        assert.equal(ast.$filter.right.left.right.type, 'literal');
+        assert.equal(ast.$filter.right.left.right.value, 4);
+        assert.equal(ast.$filter.right.right.type, 'literal');
+        assert.equal(ast.$filter.right.right.value, 33);
+    });
+
+    it('should parse identifer.unit in math equation', function(){
+        var ast = parser.parse('$filter=( birthday.month() sub 1 ) eq 7');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'sub');
+        assert.equal(ast.$filter.left.left.type, 'property');
+        assert.equal(ast.$filter.left.left.name, 'birthday');
+        assert.equal(ast.$filter.left.left.unit, 'month');
+        assert.equal(ast.$filter.left.right.type, 'literal');
+        assert.equal(ast.$filter.left.right.value, '1');
+        assert.equal(ast.$filter.right.type, 'literal');
+        assert.equal(ast.$filter.right.value, '7');
+    });
+
+    it('should parse identifer.unit now.unit for last month ', function(){
+        var ast = parser.parse('$filter=birthday.month() eq ( now().month() sub 1 )');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'property');
+        assert.equal(ast.$filter.left.name, 'birthday');
+        assert.equal(ast.$filter.left.unit, 'month');
+        assert.equal(ast.$filter.right.type, 'sub');
+        assert.equal(ast.$filter.right.left.type, 'now');
+        assert.equal(ast.$filter.right.left.unit, 'month');
+        assert.equal(ast.$filter.right.right.type, 'literal');
+        assert.equal(ast.$filter.right.right.value, '1');
+    });
+
+    it('should parse identifer.unit now.unit for last quarter ', function(){
+        var ast = parser.parse('$filter=birthday.quarter() eq ( now().quarter() sub 1 )');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'property');
+        assert.equal(ast.$filter.left.name, 'birthday');
+        assert.equal(ast.$filter.left.unit, 'quarter');
+        assert.equal(ast.$filter.right.type, 'sub');
+        assert.equal(ast.$filter.right.left.type, 'now');
+        assert.equal(ast.$filter.right.left.unit, 'quarter');
+        assert.equal(ast.$filter.right.right.type, 'literal');
+        assert.equal(ast.$filter.right.right.value, '1');
+    });
+
+    it('should parse identifer.unit now.unit for last week, with identifierPath ', function(){
+        var ast = parser.parse('$filter=related/related/created_at.week() eq ( now().week() sub 1 )');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'property');
+        assert.equal(ast.$filter.left.name, 'related/related/created_at');
+        assert.equal(ast.$filter.left.unit, 'week');
+        assert.equal(ast.$filter.right.type, 'sub');
+        assert.equal(ast.$filter.right.left.type, 'now');
+        assert.equal(ast.$filter.right.left.unit, 'week');
+        assert.equal(ast.$filter.right.right.type, 'literal');
+        assert.equal(ast.$filter.right.right.value, '1');
+    });
+
+    it('should parse identifer.unit now.unit for next month ', function(){
+        var ast = parser.parse('$filter=birthday.month() eq ( now().month() add 1 )');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'property');
+        assert.equal(ast.$filter.left.name, 'birthday');
+        assert.equal(ast.$filter.left.unit, 'month');
+        assert.equal(ast.$filter.right.type, 'add');
+        assert.equal(ast.$filter.right.left.type, 'now');
+        assert.equal(ast.$filter.right.left.unit, 'month');
+        assert.equal(ast.$filter.right.right.type, 'literal');
+        assert.equal(ast.$filter.right.right.value, '1');
+    });
+
+    it('should parse identifer.unit now.unit for this month ', function(){
+        var ast = parser.parse('$filter=birthday.month() eq now().month()');
+        assert.equal(ast.$filter.type, 'eq');
+        assert.equal(ast.$filter.left.type, 'property');
+        assert.equal(ast.$filter.left.name, 'birthday');
+        assert.equal(ast.$filter.left.unit, 'month');
+        assert.equal(ast.$filter.right.type, 'now');
+        assert.equal(ast.$filter.right.unit, 'month');
+    });
+
     it('should parse aliasIdentifier', function(){
         var ast = parser.parse('$filter=closingDate eq @lx_date_this_week');
         assert.equal(ast.$filter.right.type, 'alias');
