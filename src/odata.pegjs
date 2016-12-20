@@ -454,14 +454,14 @@ otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:pa
                                   return {
                                       type: "functioncall",
                                       func: "substring",
-                                      args: [arg0, arg1, ag2]
+                                      args: [arg0, arg1, arg2]
                                   }
                               } /
                               "replace(" "(" arg0:part "," WSP? arg1:part "," WSP? arg2:part ")" {
                                   return {
                                       type: "functioncall",
                                       func: "replace",
-                                      args: [arg0, arg1, ag2]
+                                      args: [arg0, arg1, arg2]
                                   }
                               }
 
