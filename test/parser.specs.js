@@ -239,13 +239,19 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
-        assert.equal(ast.$filter.left.name, "linked_table/any_num_hops/string_list");
         assert.equal(ast.$filter.left.func, "any");
 
-        assert.equal(ast.$filter.left.args[0].type, "eq");
-        assert.equal(ast.$filter.left.args[0].type, "eq");
-        assert.equal(ast.$filter.left.args[0].left, "list_item");
-        assert.equal(ast.$filter.left.args[0].right.value, "test");
+        assert.equal(ast.$filter.left.args[0].type, "property");
+        assert.equal(ast.$filter.left.args[0].name, "linked_table/any_num_hops/string_list");
+
+        assert.equal(ast.$filter.left.args[1].type, "lambda");
+        assert.equal(ast.$filter.left.args[1].args[0].type, "property");
+        assert.equal(ast.$filter.left.args[1].args[0].name, "list_item");
+        assert.equal(ast.$filter.left.args[1].args[1].type, "eq");
+        assert.equal(ast.$filter.left.args[1].args[1].left.type, "property");
+        assert.equal(ast.$filter.left.args[1].args[1].left.name, "list_item");
+        assert.equal(ast.$filter.left.args[1].args[1].right.type, "literal");
+        assert.equal(ast.$filter.left.args[1].args[1].right.value, "test");
 
         assert.equal(ast.$filter.right.value.true);
 
@@ -258,12 +264,19 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.type, "eq");
 
         assert.equal(ast.$filter.left.type, "functioncall");
-        assert.equal(ast.$filter.left.name, "linked_table/any_num_hops/string_list");
         assert.equal(ast.$filter.left.func, "all");
 
-        assert.equal(ast.$filter.left.args[0].type, "eq");
-        assert.equal(ast.$filter.left.args[0].left, "list_item");
-        assert.equal(ast.$filter.left.args[0].right.value, "test");
+        assert.equal(ast.$filter.left.args[0].type, "property");
+        assert.equal(ast.$filter.left.args[0].name, "linked_table/any_num_hops/string_list");
+
+        assert.equal(ast.$filter.left.args[1].type, "lambda");
+        assert.equal(ast.$filter.left.args[1].args[0].type, "property");
+        assert.equal(ast.$filter.left.args[1].args[0].name, "list_item");
+        assert.equal(ast.$filter.left.args[1].args[1].type, "eq");
+        assert.equal(ast.$filter.left.args[1].args[1].left.type, "property");
+        assert.equal(ast.$filter.left.args[1].args[1].left.name, "list_item");
+        assert.equal(ast.$filter.left.args[1].args[1].right.type, "literal");
+        assert.equal(ast.$filter.left.args[1].args[1].right.value, "test");
 
         assert.equal(ast.$filter.right.value.true);
 

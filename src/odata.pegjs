@@ -399,10 +399,13 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
 
 collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
                                   return {
-                                      name: p.idPath,
                                       type: "functioncall",
                                       func: p.func,
-                                      args: [arg0]
+                                      args: [{
+                                        type: "property",
+                                        name: p.idPath
+                                        }, arg0
+                                      ]
                                   }
                               }
 
@@ -430,16 +433,22 @@ idPartANDfuncArg           = a:"/" b:identifier {
                                 return b;
                              }
 
-lambdaFunc                 = lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
+lambdaFunc                 = arg0:lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
                                 return {
-                                        type: op,
-                                        left: a,
-                                        right: b
+                                        type: "lambda",
+                                        args: [
+                                          arg0,
+                                          {
+                                            type: op,
+                                            left: a,
+                                            right: b
+                                          }
+                                        ]
                                 }
                              }
 
 // do not let lambdaVar be a primitiveLiteral, because ambiguity with datetime (int:int)
-lambdaVar                  = identifierPart
+lambdaVar                  = identifierRoot
 
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
