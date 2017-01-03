@@ -194,11 +194,18 @@ identifierPath              =   a:identifier b:identifierPathParts? { return a +
 
 identifierRoot              = aliasIdentifier /
                               n:identifierPath u:unit? {
+                                if (u) {
                                   return {
                                       type: 'property',
                                       name: n,
                                       unit: u
                                   }
+                                } else {
+                                  return {
+                                      type: 'property',
+                                      name: n
+                                  }
+                                }
                               }
 
 unit                        = "." u:unitArg "()" {
@@ -508,9 +515,14 @@ part                        =   collectionFuncExpr /
                                 identifierRoot
 
 nowUnit                     = "now()" u:unit? {
+                                if (u) {
+                                  return {
+                                    type: "now",
+                                    unit: u
+                                  }
+                                }
                                 return {
-                                  type: "now",
-                                  unit: u
+                                  type: "now"
                                 }
                               }
 
