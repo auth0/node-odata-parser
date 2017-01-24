@@ -213,10 +213,9 @@ unit                        = "." u:unitArg "()" {
                               }
 
 // everything which accepts a timestamp for unit extraction
-unitArg                    = "century" / "decade" / "year" / "month" / "week" / "day" /
-                              "date" / "day" / "hour" / "minute" / "second" /
-                              "dow" / "doy" / "epoch" / "isodow" / "isoyear" /
-                              "millennium" / "quarter"
+unitArg                    = "microseconds" / "milliseconds" / "second" / "minute"
+                              "hour" / "day" / "week" / "month" / "quarter" / "year"
+                              "decade" / "century" / "millennium"
 
 // end: OData identifiers
 
