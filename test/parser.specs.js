@@ -86,6 +86,77 @@ describe('odata.parser grammar', function () {
 
     });
 
+    it('should parse $apply=compute(concat(x,y) as z)', function () {
+
+        var ast = parser.parse("$apply=compute(concat( name, 'e') as elephant)");
+
+        assert.equal(ast.$apply[0].type, "transformation");
+        assert.equal(ast.$apply[0].func, "compute");
+        assert.equal(ast.$apply[0].args[0].type, "alias");
+        assert.equal(ast.$apply[0].args[0].name, "elephant");
+        assert.equal(ast.$apply[0].args[0].expression.type, "functioncall");
+        assert.equal(ast.$apply[0].args[0].expression.func, "concat");
+        assert.equal(ast.$apply[0].args[0].expression.args[0].type, "property");
+        assert.equal(ast.$apply[0].args[0].expression.args[0].name, "name");
+        assert.equal(ast.$apply[0].args[0].expression.args[1].type, "literal");
+        assert.equal(ast.$apply[0].args[0].expression.args[1].value, "e");
+    });
+
+    it('should parse $apply=compute(concat(x,y) as z, concat(a,b) as g)', function () {
+      var ast = parser.parse("$apply=compute(concat(x,y) as z, concat(a,b) as g)");
+
+      assert.equal(ast.$apply[0].type, "transformation");
+      assert.equal(ast.$apply[0].func, "compute");
+      assert.equal(ast.$apply[0].args[0].type, "alias");
+      assert.equal(ast.$apply[0].args[0].name, "z");
+      assert.equal(ast.$apply[0].args[0].expression.type, "functioncall");
+      assert.equal(ast.$apply[0].args[0].expression.func, "concat");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].type, "property");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].name, "x");
+      assert.equal(ast.$apply[0].args[0].expression.args[1].type, "property");
+      assert.equal(ast.$apply[0].args[0].expression.args[1].name, "y");
+      assert.equal(ast.$apply[0].args[1].type, "alias");
+      assert.equal(ast.$apply[0].args[1].name, "g");
+      assert.equal(ast.$apply[0].args[1].expression.type, "functioncall");
+      assert.equal(ast.$apply[0].args[1].expression.func, "concat");
+      assert.equal(ast.$apply[0].args[1].expression.args[0].type, "property");
+      assert.equal(ast.$apply[0].args[1].expression.args[0].name, "a");
+      assert.equal(ast.$apply[0].args[1].expression.args[1].type, "property");
+      assert.equal(ast.$apply[0].args[1].expression.args[1].name, "b");
+    });
+
+    it('should parse nested transformations. $apply=compute(identity)', function () {
+      // not sure this in meaningful. the mapper will be checking for valid child types
+      var ast = parser.parse("$apply=compute(identity)");
+
+      assert.equal(ast.$apply[0].type, "transformation");
+      assert.equal(ast.$apply[0].func, "compute");
+      assert.equal(ast.$apply[0].args[0].type, "transformation");
+      assert.equal(ast.$apply[0].args[0].func, "identity");
+    });
+
+    it('should parse $apply=compute(concat(x,y) as z, ( 1 add 2 ) as g)', function () {
+      var ast = parser.parse("$apply=compute(concat(x,y) as z, ( 1 add 2 ) as g)");
+
+      assert.equal(ast.$apply[0].type, "transformation");
+      assert.equal(ast.$apply[0].func, "compute");
+      assert.equal(ast.$apply[0].args[0].type, "alias");
+      assert.equal(ast.$apply[0].args[0].name, "z");
+      assert.equal(ast.$apply[0].args[0].expression.type, "functioncall");
+      assert.equal(ast.$apply[0].args[0].expression.func, "concat");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].type, "property");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].name, "x");
+      assert.equal(ast.$apply[0].args[0].expression.args[1].type, "property");
+      assert.equal(ast.$apply[0].args[0].expression.args[1].name, "y");
+      assert.equal(ast.$apply[0].args[1].type, "alias");
+      assert.equal(ast.$apply[0].args[1].name, "g");
+      assert.equal(ast.$apply[0].args[1].expression.type, "add");
+      assert.equal(ast.$apply[0].args[1].expression.left.type, "literal");
+      assert.equal(ast.$apply[0].args[1].expression.left.value, 1);
+      assert.equal(ast.$apply[0].args[1].expression.right.type, "literal");
+      assert.equal(ast.$apply[0].args[1].expression.right.value, 2);
+    });
+
     it('should parse $filter', function () {
 
         var ast = parser.parse("$filter=Name eq 'Jef'");
@@ -483,28 +554,28 @@ describe('odata.parser grammar', function () {
         assert.equal(ast.$filter.right.unit, 'month');
     });
 
-    it('should parse aliasIdentifier', function(){
+    it('should parse parameterAliasIdentifier', function(){
         var ast = parser.parse('$filter=closingDate eq @lx_date_this_week');
-        assert.equal(ast.$filter.right.type, 'alias');
+        assert.equal(ast.$filter.right.type, 'parameterAlias');
         assert.equal(ast.$filter.right.name, 'lx_date_this_week');
     });
 
-    it('should parse aliasExpression', function(){
+    it('should parse parameterAliasExpression', function(){
         var ast = parser.parse('@lx_date_this_week=43242');
-        assert.equal(ast.aliasExpr.alias.type, 'alias');
-        assert.equal(ast.aliasExpr.alias.name, 'lx_date_this_week');
-        assert.equal(ast.aliasExpr.value.type, 'literal');
-        assert.equal(ast.aliasExpr.value.value, '43242');
+        assert.equal(ast.parameterAliasExpr.parameterAlias.type, 'parameterAlias');
+        assert.equal(ast.parameterAliasExpr.parameterAlias.name, 'lx_date_this_week');
+        assert.equal(ast.parameterAliasExpr.value.type, 'literal');
+        assert.equal(ast.parameterAliasExpr.value.value, '43242');
     });
 
-    it('should parse aliasExpression with cond', function(){
+    it('should parse parameterAliasExpression with cond', function(){
         var ast = parser.parse("@lx_date_this_week=closingDate gt datetime'2012-09-27T21:12:59'");
-        assert.equal(ast.aliasExpr.alias.type, 'alias');
-        assert.equal(ast.aliasExpr.alias.name, 'lx_date_this_week');
-        assert.equal(ast.aliasExpr.value.type, 'gt');
-        assert.equal(ast.aliasExpr.value.left.type, 'property');
-        assert.equal(ast.aliasExpr.value.left.name, 'closingDate');
-        assert.equal(ast.aliasExpr.value.right.type, 'literal');
+        assert.equal(ast.parameterAliasExpr.parameterAlias.type, 'parameterAlias');
+        assert.equal(ast.parameterAliasExpr.parameterAlias.name, 'lx_date_this_week');
+        assert.equal(ast.parameterAliasExpr.value.type, 'gt');
+        assert.equal(ast.parameterAliasExpr.value.left.type, 'property');
+        assert.equal(ast.parameterAliasExpr.value.left.name, 'closingDate');
+        assert.equal(ast.parameterAliasExpr.value.right.type, 'literal');
         // AssertionError: 2012-09-27T21:12:59.000Z == '2012-09-27T21:12:59.000Z'
     });
 

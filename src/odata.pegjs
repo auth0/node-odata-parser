@@ -175,10 +175,10 @@ identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); 
 
 identifier                  = identifierPart
 
-// denote when an identifier is an alias. So the mapper can search for the matching aliasExpr
-aliasIdentifier            = "@" a:identifier {
+// denote when an identifier is a parameter alias. So the mapper can search for the matching parameterAliasExpr
+parameterAliasIdentifier    = "@" a:identifier {
                                 return {
-                                    type:'alias',
+                                    type:'parameterAlias',
                                     name: a
                                 }
                             }
@@ -192,7 +192,8 @@ identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
 
 identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
 
-identifierRoot              = aliasIdentifier /
+// FIXME: cannot place aliasExpression as option here. Because in odata ABNF, is only in transformations.
+identifierRoot              = parameterAliasIdentifier /
                               n:identifierPath u:unit? {
                                 if (u) {
                                   return {
@@ -345,6 +346,111 @@ selectList                  =
 
 
 
+//$apply
+apply                      =  "$apply=" WSP? t:transformationsList
+                                {
+                                  return {
+                                    "$apply": t
+                                  }
+                                }
+
+transformationsList        =  i:transformation WSP? list:("/" WSP? l:transformationsList)? {
+                                    if (list === "") list = [];
+                                    list = list.filter(f => f !== "/" && f !== " ");
+                                    if (require('util').isArray(list[0])) {
+                                        list = list[0];
+                                    }
+                                    list.unshift(i);
+                                    return list;
+                                }
+
+transformation             =  t:transformationArg "(" WSP? list:applyList WSP? ")"
+                                {
+                                  return {
+                                    "type": "transformation",
+                                    "func": t,
+                                    "args": list
+                                  };
+                                } /
+                              t:"identity"
+                                {
+                                  return {
+                                    "type": "transformation",
+                                    "func": t,
+                                    "args": []
+                                  };
+                                } /
+                              t:"aggregate" "(" WSP? list:aggregateExprList WSP? ")"
+                                {
+                                  return {
+                                    "type": "transformation",
+                                    "func": t,
+                                    "args": list
+                                  };
+                                }
+
+// FIXME: the syntax for groupby (e.g. rollup, $all) is not yet supported
+// FIXME: the syntax for concat (set concat) is not yet supported
+transformationArg          =
+                              "topcount" /
+                              "topsum" /
+                              "toppercent" /
+                              "bottomcount" /
+                              "bottomsum" /
+                              "bottompercent" /
+                              // "concat" /
+                              // "groupby" /
+                              "filter" /
+                              "expand" /
+                              "search" /
+                              "compute"
+
+applyList                 =  i:applyItem WSP? list:("," WSP? l:applyList)? {
+                                    if (list === "") list = [];
+                                    list = list.filter(f => f !== "," && f !== " ");
+                                    if (require('util').isArray(list[0])) {
+                                        list = list[0];
+                                    }
+                                    list.unshift(i);
+                                    return list;
+                                }
+
+// collectionFuncExpr is allowed in AST. Decide if odata compliant, (if enable in mapper).
+applyItem                  =  transformation /
+                              aliasExpression /
+                              part
+
+aggregateExprList          =  i:aggregateExprItem WSP? list:("," WSP? l:aggregateExprList)? {
+                                    if (list === "") list = [];
+                                    list = list.filter(f => f !== "," && f !== " ");
+                                    if (require('util').isArray(list[0])) {
+                                        list = list[0];
+                                    }
+                                    list.unshift(i);
+                                    return list;
+                                }
+
+// FIXME: this is the grammar (no ambiguity atm).
+// nodes are not yet being created/returned
+aggregateExprItem          =  identifierRoot WSP+ "with" WSP+ m:aggregateMethod WSP+ "as" a:identifier /
+                              "$count" WSP+ "as" WSP+ a:identifier /
+                              identifierRoot WSP+ "as" WSP+ a:identifier /
+                              identifierRoot
+
+aggregateMethod            = "sum" / "min" / "max" / "average" / "countdistinct"
+
+aliasExpression             =
+                             p:part WSP+ "as" WSP+ a:identifier
+                              {
+                                return {
+                                  "type": "alias",
+                                  "name": a,
+                                  "expression":p
+                                };
+                              }
+
+
+
 //filter
 filter                      =   "$filter=" list:filterExpr {
                                     return {
@@ -458,7 +564,7 @@ lambdaVar                  = identifierRoot
 
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
-otherFunc2                 = f:otherFunctions2Arg "(" arg0:part "," WSP? arg1:part ")" {
+otherFunc2                 = f:otherFunctions2Arg "(" WSP? arg0:part "," WSP? arg1:part ")" {
                                   return {
                                       type: "functioncall",
                                       func: f,
@@ -489,7 +595,7 @@ cond                        = a:part WSP op:op WSP b:part {
                                 } / booleanFunc
 
 /* Does not have operator precedence. (peg decides path per each token.) Use nesting. */
-mathCond                   = a:part WSP op:mathOp WSP b:part {
+mathCond                   = a:part WSP? op:mathOp WSP? b:part {
                                     return {
                                         type: op,
                                         left: a,
@@ -553,8 +659,9 @@ expList                     = e:exp "&" el:expList { return [e].concat(el); } /
                               e:exp { return [e]; }
 
 
-exp                         =   aliasExpr /
+exp                         =   parameterAliasExpr /
                                 expand /
+                                apply /
                                 filter /
                                 orderby /
                                 skip /
@@ -566,17 +673,17 @@ exp                         =   aliasExpr /
                                 search /
                                 unsupported
 
-// because of the way that query works, each exp (e.g. filter, aliasExpr) can only have a single root
-aliasExpr                   = n:aliasIdentifier "=" v:aliasValue {
-                                  return { 'aliasExpr': {
-                                      alias: n,
+// because of the way that query works, each exp (e.g. filter, parameterAliasExpr) can only have a single root
+parameterAliasExpr          = n:parameterAliasIdentifier "=" v:parameterAliasValue {
+                                  return { 'parameterAliasExpr': {
+                                      parameterAlias: n,
                                       value: v
                                   }};
                               }
 
-// from the odata spec: the aliasValue can be a cond, collection of literals, or a literal
+// from the odata spec: the parameterAliasValue can be a cond, collection of literals, or a literal
 // we don't yet support a collection of literals. E.g. `@lx_colors:permitted=['red', 'green']`
-aliasValue                  = cond /
+parameterAliasValue         = cond /
                               part
 
 
