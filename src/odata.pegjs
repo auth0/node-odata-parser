@@ -351,12 +351,12 @@ apply                      =  "$apply=" WSP? t:transformationsList
                                 {
                                   return {
                                     "$apply": t
-                                  }
+                                  };
                                 }
 
 transformationsList        =  i:transformation WSP? list:("/" WSP? l:transformationsList)? {
                                     if (list === "") list = [];
-                                    list = list.filter(f => f !== "/" && f !== " ");
+                                    list = list.filter(f => f !== "/" && f !== " " && f !== "");
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
                                     }
@@ -364,23 +364,33 @@ transformationsList        =  i:transformation WSP? list:("/" WSP? l:transformat
                                     return list;
                                 }
 
-transformation             =  t:transformationArg "(" WSP? list:applyList WSP? ")"
+// FIXME: for now, the transformation filter(boolExpn) cannot have a root of "and"|"or"
+transformation             =
+                              t:"filter" "(" WSP? a:cond WSP? ")"
                                 {
                                   return {
-                                    "type": "transformation",
-                                    "func": t,
-                                    "args": list
+                                    type: "transformation",
+                                    func: t,
+                                    args: [a]
                                   };
                                 } /
                               t:"identity"
                                 {
                                   return {
-                                    "type": "transformation",
-                                    "func": t,
-                                    "args": []
+                                    type: "transformation",
+                                    func: t,
+                                    args: []
                                   };
                                 } /
                               t:"aggregate" "(" WSP? list:aggregateExprList WSP? ")"
+                                {
+                                  return {
+                                    type: "transformation",
+                                    func: t,
+                                    args: list
+                                  };
+                                } /
+                              t:transformationArg "(" WSP? list:applyList WSP? ")"
                                 {
                                   return {
                                     "type": "transformation",
@@ -400,7 +410,6 @@ transformationArg          =
                               "bottompercent" /
                               // "concat" /
                               // "groupby" /
-                              "filter" /
                               "expand" /
                               "search" /
                               "compute"
@@ -430,9 +439,21 @@ aggregateExprList          =  i:aggregateExprItem WSP? list:("," WSP? l:aggregat
                                     return list;
                                 }
 
-// FIXME: this is the grammar (no ambiguity atm).
-// nodes are not yet being created/returned
-aggregateExprItem          =  identifierRoot WSP+ "with" WSP+ m:aggregateMethod WSP+ "as" a:identifier /
+// FIXME: doesn't return nodes for aggregate($count ...)
+// FIXME: doesn't return nodes for aggregate(identifier as alias)
+// FIXME: doesn't return nodes for aggregate(identifier)
+aggregateExprItem          =  i:identifierRoot WSP+ "with" WSP+ m:aggregateMethod WSP+ "as" WSP+ a:identifier
+                                {
+                                  return {
+                                    "type": "alias",
+                                    "name": a,
+                                    "expression": {
+                                      "type": "aggregate",
+                                      "func": m,
+                                      "args":[i]
+                                    }
+                                  };
+                                } /
                               "$count" WSP+ "as" WSP+ a:identifier /
                               identifierRoot WSP+ "as" WSP+ a:identifier /
                               identifierRoot
@@ -586,7 +607,14 @@ otherFunc2                 = f:otherFunctions2Arg "(" WSP? arg0:part "," WSP? ar
                                   }
                               }
 
-cond                        = a:part WSP op:op WSP b:part {
+cond                        = a:identifierRoot WSP+ op:op WSP+ b:part {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                } /
+                              a:part WSP+ op:op WSP+ b:part {
                                     return {
                                         type: op,
                                         left: a,

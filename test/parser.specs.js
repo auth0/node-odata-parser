@@ -157,6 +157,49 @@ describe('odata.parser grammar', function () {
       assert.equal(ast.$apply[0].args[1].expression.right.value, 2);
     });
 
+    it('should parse multiple aggregate transformations. $apply=aggregate(t1, t2)', function () {
+      var ast = parser.parse("$apply=aggregate(money_amount with sum as total, money_amount with min as minimum)");
+
+      assert.equal(ast.$apply[0].type, "transformation");
+      assert.equal(ast.$apply[0].func, "aggregate");
+
+      assert.equal(ast.$apply[0].args[0].type, "alias");
+      assert.equal(ast.$apply[0].args[0].name, "total");
+      assert.equal(ast.$apply[0].args[0].expression.type, "aggregate");
+      assert.equal(ast.$apply[0].args[0].expression.func, "sum");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].type, "property");
+      assert.equal(ast.$apply[0].args[0].expression.args[0].name, "money_amount");
+
+      assert.equal(ast.$apply[0].args[1].type, "alias");
+      assert.equal(ast.$apply[0].args[1].name, "minimum");
+      assert.equal(ast.$apply[0].args[1].expression.type, "aggregate");
+      assert.equal(ast.$apply[0].args[1].expression.func, "min");
+      assert.equal(ast.$apply[0].args[1].expression.args[0].type, "property");
+      assert.equal(ast.$apply[0].args[1].expression.args[0].name, "money_amount");
+    });
+
+    it('should parse serial transformations. $apply=filter()/aggregate()', function () {
+      // not sure this in meaningful. the mapper will be checking for valid child types
+      var ast = parser.parse("$apply=filter(nullable_integer eq 123)/aggregate(money_amount with sum as total)");
+
+      assert.equal(ast.$apply[0].type, "transformation");
+      assert.equal(ast.$apply[0].func, "filter");
+      assert.equal(ast.$apply[0].args[0].type, "eq");
+      assert.equal(ast.$apply[0].args[0].left.type, "property");
+      assert.equal(ast.$apply[0].args[0].left.name, "nullable_integer");
+      assert.equal(ast.$apply[0].args[0].right.type, "literal");
+      assert.equal(ast.$apply[0].args[0].right.value, 123);
+
+      assert.equal(ast.$apply[1].type, "transformation");
+      assert.equal(ast.$apply[1].func, "aggregate");
+      assert.equal(ast.$apply[1].args[0].type, "alias");
+      assert.equal(ast.$apply[1].args[0].name, "total");
+      assert.equal(ast.$apply[1].args[0].expression.type, "aggregate");
+      assert.equal(ast.$apply[1].args[0].expression.func, "sum");
+      assert.equal(ast.$apply[1].args[0].expression.args[0].type, "property");
+      assert.equal(ast.$apply[1].args[0].expression.args[0].name, "money_amount");
+    });
+
     it('should parse $filter', function () {
 
         var ast = parser.parse("$filter=Name eq 'Jef'");
