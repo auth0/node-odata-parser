@@ -457,45 +457,57 @@ describe('odata.parser grammar', function () {
     it('should convert dates to javascript Date', function () {
         var ast = parser.parse("$top=2&$filter=Date gt datetime'2012-09-27T21:12:59'");
         assert.ok(ast.$filter.right.value instanceof Date);
+        assert.equal(ast.$filter.right.literalType, 'datetime');
     });
 
     it('should parse boolean okay', function(){
         var ast = parser.parse('$filter=status eq true');
         assert.equal(ast.$filter.right.value, true);
+        assert.equal(ast.$filter.right.literalType, 'boolean');
         var ast = parser.parse('$filter=status eq false');
         assert.equal(ast.$filter.right.value, false);
+        assert.equal(ast.$filter.right.literalType, 'boolean');
     });
 
     it('should parse numbers okay', function(){
         var ast = parser.parse('$filter=status eq 3');
         assert.equal(ast.$filter.right.value, 3);
+        assert.equal(ast.$filter.right.literalType, 'integer');
         // Test multiple digits - problem of not joining digits to array
         ast = parser.parse('$filter=status eq 34');
         assert.equal(ast.$filter.right.value, 34);
+        assert.equal(ast.$filter.right.literalType, 'integer');
         // Test number starting with 1 - problem of boolean rule order
         ast = parser.parse('$filter=status eq 12');
         assert.equal(ast.$filter.right.value, 12);
+        assert.equal(ast.$filter.right.literalType, 'integer');
     });
 
     it('should parse negative numbers okay', function(){
         var ast = parser.parse('$filter=status eq -3');
         assert.equal(ast.$filter.right.value, -3);
+        assert.equal(ast.$filter.right.literalType, 'integer');
         ast = parser.parse('$filter=status eq -34');
         assert.equal(ast.$filter.right.value, -34);
+        assert.equal(ast.$filter.right.literalType, 'integer');
     });
 
     it('should parse decimal numbers okay', function(){
         var ast = parser.parse('$filter=status eq 3.4');
         assert.equal(ast.$filter.right.value, '3.4');
+        assert.equal(ast.$filter.right.literalType, 'decimal');
         ast = parser.parse('$filter=status eq -3.4');
         assert.equal(ast.$filter.right.value, '-3.4');
+        assert.equal(ast.$filter.right.literalType, 'decimal');
     });
 
     it('should parse double numbers okay', function(){
         var ast = parser.parse('$filter=status eq 3.4e1');
         assert.equal(ast.$filter.right.value, '3.4e1');
+        assert.equal(ast.$filter.right.literalType, 'double');
         ast = parser.parse('$filter=status eq -3.4e-1');
         assert.equal(ast.$filter.right.value, '-3.4e-1');
+        assert.equal(ast.$filter.right.literalType, 'double');
     });
 
     it('should parse cond with eq|le|ge|lt|gt as the root, with the mathOp as the subtree', function(){
