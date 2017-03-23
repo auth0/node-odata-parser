@@ -610,30 +610,11 @@ describe('odata.parser grammar', function () {
     });
 
     it('should parse parameterAliasIdentifier', function(){
-        var ast = parser.parse('$filter=closingDate eq @lx_date_this_week');
-        assert.equal(ast.$filter.right.type, 'parameterAlias');
-        assert.equal(ast.$filter.right.name, 'lx_date_this_week');
+        var ast = parser.parse('$filter=closingDate eq @lx_myUser_Id');
+        assert.equal(ast.$filter.right.type, 'literal');
+        assert.equal(ast.$filter.right.literalType, 'parameter-alias');
+        assert.equal(ast.$filter.right.value, '@lx_myUser_Id');
     });
-
-    it('should parse parameterAliasExpression', function(){
-        var ast = parser.parse('@lx_date_this_week=43242');
-        assert.equal(ast.parameterAliasExpr.parameterAlias.type, 'parameterAlias');
-        assert.equal(ast.parameterAliasExpr.parameterAlias.name, 'lx_date_this_week');
-        assert.equal(ast.parameterAliasExpr.value.type, 'literal');
-        assert.equal(ast.parameterAliasExpr.value.value, '43242');
-    });
-
-    it('should parse parameterAliasExpression with cond', function(){
-        var ast = parser.parse("@lx_date_this_week=closingDate gt datetime'2012-09-27T21:12:59'");
-        assert.equal(ast.parameterAliasExpr.parameterAlias.type, 'parameterAlias');
-        assert.equal(ast.parameterAliasExpr.parameterAlias.name, 'lx_date_this_week');
-        assert.equal(ast.parameterAliasExpr.value.type, 'gt');
-        assert.equal(ast.parameterAliasExpr.value.left.type, 'property');
-        assert.equal(ast.parameterAliasExpr.value.left.name, 'closingDate');
-        assert.equal(ast.parameterAliasExpr.value.right.type, 'literal');
-        // AssertionError: 2012-09-27T21:12:59.000Z == '2012-09-27T21:12:59.000Z'
-    });
-
 
     it('should parse $expand and return an array of identifier paths', function () {
         var ast = parser.parse('$expand=Category,Products/Suppliers,Items($expand=ItemRatings;$select=ItemDetails;$search="foo")');

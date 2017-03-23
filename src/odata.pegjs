@@ -44,8 +44,8 @@ primitiveLiteral            =   null /
                                 byte /
                                 sbyte /
                                 boolean /
-                                string
-
+                                string /
+                                parameterAlias
 
 null                         =  value:nullValue { return { type: 'null', value: value }; }
                                 // Peg.js seems to have a bug with the nullValue rule where it won't provide the identifier value
@@ -154,6 +154,15 @@ positiveInfinity            =   "INF"
 
 nanInfinity                 =   nan / negativeInfinity / positiveInfinity
 
+parameterAlias              = a:lxParameterAliases
+                              { return { type: 'parameter-alias', value: a }; }
+
+lxParameterAliases            = "@lx_myUser_Id" /
+                                "@lx_myOrg_Id" /
+                                "@lx_myUser_Timezone" /
+                                "@lx_myTeam" /
+                                "@lx_myWorkflows"
+
 // end: OData literals
 
 /*
@@ -175,14 +184,6 @@ identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); 
 
 identifier                  = identifierPart
 
-// denote when an identifier is a parameter alias. So the mapper can search for the matching parameterAliasExpr
-parameterAliasIdentifier    = "@" a:identifier {
-                                return {
-                                    type:'parameterAlias',
-                                    name: a
-                                }
-                            }
-
 identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
@@ -193,7 +194,7 @@ identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
 identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
 
 // FIXME: cannot place aliasExpression as option here. Because in odata ABNF, is only in transformations.
-identifierRoot              = parameterAliasIdentifier /
+identifierRoot              =
                               n:identifierPath u:unit? {
                                 if (u) {
                                   return {
@@ -688,7 +689,7 @@ expList                     = e:exp "&" el:expList { return [e].concat(el); } /
                               e:exp { return [e]; }
 
 
-exp                         =   parameterAliasExpr /
+exp                         =
                                 expand /
                                 apply /
                                 filter /
@@ -701,20 +702,6 @@ exp                         =   parameterAliasExpr /
                                 callback /
                                 search /
                                 unsupported
-
-// because of the way that query works, each exp (e.g. filter, parameterAliasExpr) can only have a single root
-parameterAliasExpr          = n:parameterAliasIdentifier "=" v:parameterAliasValue {
-                                  return { 'parameterAliasExpr': {
-                                      parameterAlias: n,
-                                      value: v
-                                  }};
-                              }
-
-// from the odata spec: the parameterAliasValue can be a cond, collection of literals, or a literal
-// we don't yet support a collection of literals. E.g. `@lx_colors:permitted=['red', 'green']`
-parameterAliasValue         = cond /
-                              part
-
 
 query                       = list:expList {
                                     //turn the array into an object like:
