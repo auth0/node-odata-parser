@@ -29,23 +29,30 @@ DQUOTE                      =   "%x22" / "\""
 
 /*
  * OData literals - adapted from OData ABNF:
- *  - http://www.odata.org/media/30002/OData%20ABNF.html
+ * http://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/abnf/odata-abnf-construction-rules.txt
  */
+// lx supports only a subset of odata prims
 primitiveLiteral            =   null /
-                                binary /
-                                dateTime /
-                                dateTimeOffset /
-                                guid /
-                                double /
                                 decimal /
-                                single /
                                 int32 /
-                                int64 /
-                                byte /
-                                sbyte /
                                 boolean /
+                                nanInfinityLiteral /
                                 string /
                                 parameterAlias
+
+// Note: ^^ In the parser, we support dateTime types ONLY within the explicit cast.
+// otherwise, our tyfun.date are parsed as strings. And the mapper implicitly casts to pg's timestamptz.
+
+// Below: permitted types I/O for explicit casting
+castDecimalFromLiteral       =  decimal / int32 / null
+
+castInt32FromLiteral         = int32 / null
+
+castBooleanFromLiteral       = int32 / null / boolean
+
+castDateTimeFromLiteral      = date / dateTimeOffset / timeOfDay / null
+
+castStringFromLiteral        = date / dateTimeOffset / timeOfDay / primitiveLiteral
 
 null                         =  value:nullValue { return { type: 'null', value: value }; }
                                 // Peg.js seems to have a bug with the nullValue rule where it won't provide the identifier value
@@ -55,68 +62,75 @@ nullValue                   =   "null" ( "'" identifier "'" )?
                                 // The optional qualifiedTypeName is used to specify what type this null value should be considered.
                                 // Knowing the type is useful for function overload resolution purposes.
 
-binary                      =   ( "%d88" / "binary" ) SQUOTE a:HEXDIG b:HEXDIG SQUOTE { return { type: 'binary', value: a + b }; }
-                                // note: "X" is case sensitive "binary" is not hence using the character code.
-
 boolean                     =   "true" { return { type: 'boolean', value: true }; } /
                                 "1" { return { type: 'boolean', value: true }; } /
                                 "false" { return { type: 'boolean', value: false }; } /
                                 "0" { return { type: 'boolean', value: false }; }
 
-byte                        =   a:DIGIT b:DIGIT c:DIGIT { return { type: 'byte', value: a + b + c }; }
-                                // numbers in the range from 0 to 257
-
-dateTime                    =   "datetime" SQUOTE a:dateTimeBody SQUOTE { return { type: 'datetime', value: new Date(a) }; }
-
-dateTimeOffset              =   "datetimeoffset" SQUOTE a:dateTimeOffsetBody SQUOTE { return { type: 'datetimeoffset', value: a }; }
-
-dateTimeBodyA               =  a:year "-" b:month "-" c:day "T" d:hour ":" e:minute "Z"? {
-                                    return a + '-' + b + '-' + c + "T" + d + ":" + e;
+dateTimeOffset              =   SQUOTE a:dateTimeOffsetBody SQUOTE {
+                                  return {
+                                    type: 'dateTimeOffset',
+                                    value: a
+                                  };
                                 }
-dateTimeBodyB               =  a:dateTimeBodyA ":" b:second "Z"? { return a + ":" + b; }
-dateTimeBodyC               =  a:dateTimeBodyB "." b:nanoSeconds { return a + "." + b; }
-dateTimeBodyD               =  a:dateTimeBodyC "-" b:zeroToTwentyFour ":" c:zeroToSixty {
-                                    return a + "-" + b + ":" + c;
-                                }
-dateTimeBody                =
-                               dateTimeBodyD
-                             / dateTimeBodyC
-                             / dateTimeBodyB
-                             / dateTimeBodyA
 
-dateTimeOffsetBody          =   dateTimeBody "Z" / // TODO: is the Z optional?
-                                dateTimeBody sign zeroToThirteen ":00" /
-                                dateTimeBody sign zeroToThirteen /
-                                dateTimeBody sign zeroToTwelve ":" zeroToSixty /
-                                dateTimeBody sign zeroToTwelve
+date                        =  SQUOTE a:dateBody SQUOTE {
+                                      return {
+                                        type: 'date',
+                                        value: a
+                                      };
+                                  }
+
+timeOfDay                   =   SQUOTE a:timeBody SQUOTE {
+                                  return {
+                                    type: 'timeOfDay',
+                                    value: a
+                                  }
+                                }
+
+dateBody                    =  a:year "-" b:month "-" c:day {
+                                  return a + '-' + b + '-' + c;
+                                }
+
+timeBodyA                    = a:hour ":" b:minute { return a + ":" + b; }
+timeBodyB                    = a:timeBodyA ":" b:second { return a + ":" + b; }
+timeBodyC                    = a:timeBodyB "." b:nanoSeconds { return a + "." + b; }
+
+timeBody                    = timeBodyC /
+                              timeBodyB /
+                              timeBodyA
+
+dateTimeBody               =  a:dateBody "T" d:timeBody {
+                                    return a + "T" + d;
+                                }
+
+dateTimeOffsetBody          =   a:dateTimeBody b:"Z" { return a + b; }/
+                                a:dateTimeBody b:sign c:hour ":00" { return a + b + c + ":00"; }
 
 decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return { type: 'decimal', value: sign + digit.join('') + '.' + decimal.join('') }; } /
                                sign? DIGIT+ ("M"/"m") { return { type: 'decimal', value: sign + digit.join('') }; }
 
-double                      =  sign:sign? digit:DIGIT "." decimal:DIGIT+ ("e" / "E") signexp:sign? exp:DIGIT+ ("D" / "d")? { return { type: 'double', value: sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join('') }; } /
-                               sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("D" / "d") { return { type: 'double', value: sign + digit.join('') + '.' + decimal.join('') }; } /
-                               sign:sign? digit:DIGIT+ ("D" / "d") { return { type: 'double', value: sign + digit.join('') }; } /
-                               value:nanInfinity ("D" / "d")? { return { type: 'double', value: value }; }
-
-guid                        =   "guid" SQUOTE a:HEXDIG8 "-" b:HEXDIG4 "-" c:HEXDIG4 "-" d:HEXDIG8 e:HEXDIG4 SQUOTE { return { type: 'guid', value: a + '-' + b + '-' + c + '-' + d + e }; }
-
-int32                       =   sign:sign? digit:DIGIT+ { return { type: 'integer', value: parseInt(digit.join('')) * (sign === '-' ? -1 : 1) }; }
+int32                       =   sign:sign? digit:DIGIT+ {
+                                  return {
+                                    type: 'integer',
+                                    value: parseInt(digit.join('')) * (sign === '-' ? -1 : 1)
+                                  };
+                                }
                                 // numbers in the range from -2147483648 to 2147483647
 
-int64                       =   sign:sign? digit:DIGIT+ ( "L" / "l" )? { return { type: 'long', value: sign + digit.join('') }; }
-                                // numbers in the range from -9223372036854775808 to 9223372036854775807
+string                      =   SQUOTE value:validstring  SQUOTE {
+                                  return {
+                                    type: 'string',
+                                    value: value
+                                  };
+                                }
 
-sbyte                       =   sign:sign? a:DIGIT b:DIGIT? c:DIGIT? { return { type: 'sbyte', value: sign + a + b + c }; }
-                                // numbers in the range from -128 to 127
-
-single                      =   (
-                                    sign:sign digit:DIGIT "." decimal:DIGIT+ ( "e" / "E" ) signexp:sign exp:DIGIT+ { return { type: 'single', value: sign + digit + '.' + decimal.join('') + 'e' + signexp + exp.join('') }; } /
-                                    sign:sign digit:DIGIT* "." decimal:DIGIT+ { return { type: 'single', value: sign + digit.join('') + '.' + decimal.join('') }; } /
-                                    sign:sign digit:DIGIT+ { return { type: 'single', value: sign + digit.join('') }; }
-                                ) ("F" / "f") /
-                                value:nanInfinity ( "F" / "f" )? { return { type: 'single', value: value }; }
-
-string                      =   SQUOTE value:validstring  SQUOTE { return { type: 'string', value: value }; }
+nanInfinityLiteral          = a:nanInfinity {
+                                return {
+                                  type: 'NaN/Infinity',
+                                  value: a
+                                };
+                              }
 
 oneToNine                   =   [1-9]
 
@@ -639,6 +653,7 @@ part                        =   collectionFuncExpr /
                                 "(" WSP? c:mathCond WSP? ")" {
                                   return c ;
                                 } /
+                                castExpression /
                                 l:primitiveLiteral {
                                     return {
                                         type: 'literal',
@@ -648,6 +663,34 @@ part                        =   collectionFuncExpr /
                                 } /
                                 nowUnit /
                                 identifierRoot
+
+// castExpression is not treated as a otherFunc2, because the arg cannot be a "part" (e.g. literal or prop)
+// Additionally, we ctrl the I/O here for casting. The the syntax of the input is valid for the output cast.
+// lx only supports explicit casting of literals
+castExpression              = "cast" "(" WSP? a:castArgs WSP? ")" {
+                                return {
+                                  type: "cast",
+                                  args: a
+                                };
+                              }
+
+castArgs                    = a:castDecimalFromLiteral WSP? "," WSP? b:"Edm.Decimal" {
+                                return [{ type: 'literal', literalType:a.type, value:a.value }, b];
+                              } /
+                              a:castInt32FromLiteral WSP? "," WSP? b:"Edm.Int32" {
+                                return [{ type: 'literal', literalType:a.type, value:a.value }, b];
+                              } /
+                              a:castBooleanFromLiteral WSP? "," WSP? b:"Edm.Boolean" {
+                                return [{ type: 'literal', literalType:a.type, value:a.value }, b];
+                              } /
+                              a:castDateTimeFromLiteral WSP? "," WSP? b:dateTimeEdms {
+                                return [{ type: 'literal', literalType:a.type, value:a.value }, b];
+                              } /
+                              a:castStringFromLiteral WSP? "," WSP? b:"Edm.String" {
+                                return [{ type: 'literal', literalType:a.type, value:a.value }, b];
+                              }
+
+dateTimeEdms               =  "Edm.DateTimeOffset" / "Edm.Date" / "Edm.TimeOfDay"
 
 nowUnit                     = "now()" u:unit? {
                                 if (u) {
