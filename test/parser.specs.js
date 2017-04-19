@@ -800,6 +800,9 @@ describe('odata.parser grammar', function () {
         var ast = parser.parse('$search="foo bar baz"');
         assert.equal(ast.$search, 'foo bar baz');
 
+        ast = parser.parse(`$search='Dell "plan b"'`);
+        assert.equal(ast.$search, 'Dell "plan b"');
+
         ast = parser.parse('$search=');
         assert.equal(ast.error, 'invalid $search parameter');
     });

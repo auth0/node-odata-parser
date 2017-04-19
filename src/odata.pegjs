@@ -320,7 +320,14 @@ searchTerm                  = s:positiveSearchTerm { return s }
 positiveSearchTerm          = s:searchPhrase { return s }
 														// / s:searchWord
 
-searchPhrase                = DQUOTE s:QCHAR_NO_AMP_DQUOTE+ DQUOTE { return s.join('') }
+/*
+  We should support any valid string (same as string prims). With SQUOTE.
+
+  But legacy odata may contain the old search syntax `$search="text_without_dqoute"`
+  So keep that as well.
+*/
+searchPhrase                = DQUOTE s:QCHAR_NO_AMP_DQUOTE+ DQUOTE { return s.join('') } /
+                              SQUOTE value:validstring SQUOTE { return value }
 
 //searchWord                // Not implementing yet, but can't be AND, OR, or NOT and can match one or more of any character from the Unicode categories L or Nl
 
