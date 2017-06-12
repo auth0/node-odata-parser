@@ -1,0 +1,62 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Lucille"
+            }
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "expand",
+        "args": [
+          {
+            "type": "property",
+            "name": "bluth_to_aardvark"
+          },
+          {
+            "type": "transformation",
+            "func": "expand",
+            "args": [
+              {
+                "type": "property",
+                "name": "owner"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "bluth_to_aardvark/owner/first_name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Marc"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

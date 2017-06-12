@@ -1,0 +1,114 @@
+{
+  "expected": {
+    "$select": [
+      "name"
+    ],
+    "$orderby": [
+      {
+        "name": "asc"
+      }
+    ],
+    "$filter": {
+      "type": "and",
+      "left": {
+        "type": "eq",
+        "left": {
+          "type": "property",
+          "name": "telephone_number"
+        },
+        "right": {
+          "type": "literal",
+          "literalType": "integer",
+          "value": 2737560
+        }
+      },
+      "right": {
+        "type": "and",
+        "left": {
+          "type": "or",
+          "left": {
+            "type": "eq",
+            "left": {
+              "type": "property",
+              "name": "name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Antwan"
+            }
+          },
+          "right": {
+            "type": "eq",
+            "left": {
+              "type": "property",
+              "name": "name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Wimberly"
+            }
+          }
+        },
+        "right": {
+          "type": "or",
+          "left": {
+            "type": "eq",
+            "left": {
+              "type": "property",
+              "name": "telephone_number"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "integer",
+              "value": 2731143
+            }
+          },
+          "right": {
+            "type": "or",
+            "left": {
+              "type": "eq",
+              "left": {
+                "type": "property",
+                "name": "telephone_number"
+              },
+              "right": {
+                "type": "literal",
+                "literalType": "integer",
+                "value": 2751056
+              }
+            },
+            "right": {
+              "type": "or",
+              "left": {
+                "type": "eq",
+                "left": {
+                  "type": "property",
+                  "name": "telephone_number"
+                },
+                "right": {
+                  "type": "literal",
+                  "literalType": "integer",
+                  "value": 9999999
+                }
+              },
+              "right": {
+                "type": "eq",
+                "left": {
+                  "type": "property",
+                  "name": "telephone_number"
+                },
+                "right": {
+                  "type": "literal",
+                  "literalType": "integer",
+                  "value": 1222234
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

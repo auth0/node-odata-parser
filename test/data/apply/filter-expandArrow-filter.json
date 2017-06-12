@@ -1,0 +1,55 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "hyperlink"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "null",
+              "value": [
+                "null",
+                ""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "expand",
+        "args": [
+          {
+            "type": "property",
+            "name": "owner"
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "owner/first_name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Marc"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

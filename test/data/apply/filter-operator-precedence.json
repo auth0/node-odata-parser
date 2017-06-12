@@ -1,0 +1,114 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "or",
+            "left": {
+              "type": "and",
+              "left": {
+                "type": "or",
+                "left": {
+                  "type": "eq",
+                  "left": {
+                    "type": "property",
+                    "name": "x"
+                  },
+                  "right": {
+                    "type": "literal",
+                    "literalType": "integer",
+                    "value": 1
+                  }
+                },
+                "right": {
+                  "type": "eq",
+                  "left": {
+                    "type": "property",
+                    "name": "y"
+                  },
+                  "right": {
+                    "type": "literal",
+                    "literalType": "integer",
+                    "value": 2
+                  }
+                }
+              },
+              "right": {
+                "type": "and",
+                "left": {
+                  "type": "eq",
+                  "left": {
+                    "type": "property",
+                    "name": "x"
+                  },
+                  "right": {
+                    "type": "literal",
+                    "literalType": "integer",
+                    "value": 3
+                  }
+                },
+                "right": {
+                  "type": "or",
+                  "left": {
+                    "type": "and",
+                    "left": {
+                      "type": "eq",
+                      "left": {
+                        "type": "property",
+                        "name": "x"
+                      },
+                      "right": {
+                        "type": "literal",
+                        "literalType": "integer",
+                        "value": 4
+                      }
+                    },
+                    "right": {
+                      "type": "eq",
+                      "left": {
+                        "type": "property",
+                        "name": "y"
+                      },
+                      "right": {
+                        "type": "literal",
+                        "literalType": "integer",
+                        "value": 5
+                      }
+                    }
+                  },
+                  "right": {
+                    "type": "eq",
+                    "left": {
+                      "type": "property",
+                      "name": "z"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "literalType": "integer",
+                      "value": 6
+                    }
+                  }
+                }
+              }
+            },
+            "right": {
+              "type": "eq",
+              "left": {
+                "type": "property",
+                "name": "top"
+              },
+              "right": {
+                "type": "literal",
+                "literalType": "integer",
+                "value": 7
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

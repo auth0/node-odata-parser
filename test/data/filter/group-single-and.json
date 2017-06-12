@@ -1,0 +1,37 @@
+{
+  "expected": {
+    "$filter": {
+      "type": "and",
+      "left": {
+        "type": "ne",
+        "left": {
+          "type": "property",
+          "name": "nullable_string"
+        },
+        "right": {
+          "type": "literal",
+          "literalType": "null",
+          "value": [
+            "null",
+            ""
+          ]
+        }
+      },
+      "right": {
+        "type": "eq",
+        "left": {
+          "type": "property",
+          "name": "telephone_number"
+        },
+        "right": {
+          "type": "literal",
+          "literalType": "integer",
+          "value": 999999999
+        }
+      }
+    },
+    "$select": [
+      "name"
+    ]
+  }
+}

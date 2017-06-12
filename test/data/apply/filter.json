@@ -1,0 +1,24 @@
+{
+  "expected": {
+  "$apply": [
+    {
+      "type": "transformation",
+      "func": "filter",
+      "args": [
+        {
+          "type": "ne",
+          "left": {
+            "type": "property",
+            "name": "first_name"
+          },
+          "right": {
+            "type": "literal",
+            "literalType": "string",
+            "value": "Marc"
+          }
+        }
+      ]
+    }
+  ]
+}
+}

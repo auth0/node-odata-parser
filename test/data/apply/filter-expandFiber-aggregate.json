@@ -1,0 +1,112 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "first_name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Marc"
+            }
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "expand",
+        "args": [
+          {
+            "type": "property",
+            "name": "owns_aaardvark"
+          },
+          "",
+          [
+            {
+              "type": "transformation",
+              "func": "filter",
+              "args": [
+                {
+                  "type": "ne",
+                  "left": {
+                    "type": "property",
+                    "name": "hyperlink_list"
+                  },
+                  "right": {
+                    "type": "literal",
+                    "literalType": "null",
+                    "value": [
+                      "null",
+                      ""
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "aggregate",
+        "args": [
+          {
+            "type": "alias",
+            "name": "sum_users",
+            "expression": {
+              "type": "aggregate",
+              "func": "sum",
+              "args": [
+                {
+                  "type": "property",
+                  "name": "lanetix/id"
+                }
+              ]
+            }
+          },
+          "",
+          [
+            {
+              "type": "alias",
+              "name": "count_aardvarks",
+              "expression": {
+                "type": "aggregate",
+                "func": "countdistinct",
+                "args": [
+                  {
+                    "type": "property",
+                    "name": "owns_aaardvark/lanetix/id"
+                  }
+                ]
+              }
+            },
+            "",
+            [
+              {
+                "type": "alias",
+                "name": "sum_aardvarks",
+                "expression": {
+                  "type": "aggregate",
+                  "func": "sum",
+                  "args": [
+                    {
+                      "type": "property",
+                      "name": "owns_aaardvark/implementation"
+                    }
+                  ]
+                }
+              }
+            ]
+          ]
+        ]
+      }
+    ]
+  }
+}

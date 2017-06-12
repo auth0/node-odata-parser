@@ -4,7 +4,7 @@
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
-    "test": "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec",
+    "test": "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec --opts test/mocha.opts",
     "prepublish": "pegjs src/odata.pegjs lib/odata-parser.js",
     "repl": "npm run prepublish && node repl.js"
   },
@@ -12,7 +12,8 @@
   "devDependencies": {
     "pegjs": "0.7.0",
     "mocha": "2.1.0",
-    "should": "^8.1.1"
+    "should": "^8.1.1",
+    "standard": "^8.6.0"
   },
   "repository": {
     "type": "git",

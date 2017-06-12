@@ -1,0 +1,115 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "ne",
+            "left": {
+              "type": "property",
+              "name": "name"
+            },
+            "right": {
+              "type": "literal",
+              "literalType": "string",
+              "value": "Lucille"
+            }
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "expand",
+        "args": [
+          {
+            "type": "property",
+            "name": "bluth_to_aardvark"
+          },
+          {
+            "type": "transformation",
+            "func": "expand",
+            "args": [
+              {
+                "type": "property",
+                "name": "engineer_picker_example_set"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "filter",
+        "args": [
+          {
+            "type": "functioncall",
+            "func": "any",
+            "args": [
+              {
+                "type": "property",
+                "name": "bluth_to_aardvark/engineer_picker_example_set"
+              },
+              {
+                "type": "lambda",
+                "args": [
+                  {
+                    "type": "property",
+                    "name": "x"
+                  },
+                  {
+                    "type": "eq",
+                    "left": {
+                      "type": "property",
+                      "name": "coding_rival"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "literalType": "integer",
+                      "value": 12731255
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "transformation",
+        "func": "aggregate",
+        "args": [
+          {
+            "type": "alias",
+            "name": "oldest_bluth",
+            "expression": {
+              "type": "aggregate",
+              "func": "max",
+              "args": [
+                {
+                  "type": "property",
+                  "name": "age"
+                }
+              ]
+            }
+          },
+          {
+            "type": "alias",
+            "name": "sum_eng_ids",
+            "expression": {
+              "type": "aggregate",
+              "func": "sum",
+              "args": [
+                {
+                  "type": "property",
+                  "name": "bluth_to_aardvark/engineer_picker_example_set/lanetix/id"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

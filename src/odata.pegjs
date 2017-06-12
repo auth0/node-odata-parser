@@ -7,6 +7,7 @@
 
 start                       = url
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*
  * Basic cons.
  */
@@ -26,6 +27,8 @@ SQUOTE                      =   "%x27" / "'"
 DQUOTE                      =   "%x22" / "\""
 
 // end: Basic cons
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
  * OData literals - adapted from OData ABNF:
@@ -179,6 +182,8 @@ lxParameterAliases            = "@lx_myUser_Id" /
 
 // end: OData literals
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 /*
  * OData identifiers
  */
@@ -234,6 +239,8 @@ unitArg                    = "microseconds" / "milliseconds" / "second" / "minut
                               "decade" / "century" / "millennium"
 
 // end: OData identifiers
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
  * OData query options
@@ -386,9 +393,8 @@ transformationsList        =  i:transformation WSP? list:("/" WSP? l:transformat
                                     return list;
                                 }
 
-// FIXME: for now, the transformation filter(boolExpn) cannot have a root of "and"|"or"
 transformation             =
-                              t:"filter" "(" WSP? a:cond WSP? ")"
+                              t:"filter" "(" WSP? a:filterTransformationExpr WSP? ")"
                                 {
                                   return {
                                     type: "transformation",
@@ -451,6 +457,79 @@ applyItem                  =  transformation /
                               aliasExpression /
                               part
 
+/* The transformation filter:
+    - $apply=filter(boolExpn):
+    - CANNOT have that weird grouping structure (see grouping.js in the mapper)
+    - CAN have a root of "and"|"or", and handles precedence.
+    - can be a lambda function, with full path identification (e.g. for nested lambda functions)
+
+    - tries to match the `collectionFuncExpr` first (used to filter fiber joins). BEFORE the cond.
+        ^^ this is different than the $filter=(boolExpn)
+*/
+filterTransformationExpr   =  orTransExpression /
+                              andTransExpression /  /* 'and' binds more tightly than 'or' */
+                              closureAndOrTransExpr /  /* binds more tightly than not enclosed w/ parans */
+                              collectionFuncExpr /
+                              cond
+
+// closure (within parans)
+closureAndOrTransExpr      = "(" WSP? a:orTransExpression WSP? ")" {
+                                return a;
+                              } /
+                             "(" WSP? a:andTransExpression WSP? ")" {
+                                return a;
+                             }
+
+
+/* Make possible child of 'and' vs. 'or' to force operator precedence.
+   (A 'or' parent can have an 'and' child, because 'and' binds more tightly.)
+
+   Also have to avoid left recursion rule.
+   (A 'and' parent cannot have a left child of type 'and', because that would have been matched in the grammar.)
+
+   So make leftChild vs. rightChild
+*/
+// or
+leftChildOfOrTransExpr     =  andTransExpression /
+                              closureAndOrTransExpr /
+                              collectionFuncExpr /
+                              cond
+
+rightChildOfOrTransExpr     = orTransExpression /
+                              andTransExpression /
+                              closureAndOrTransExpr /
+                              collectionFuncExpr /
+                              cond
+
+// and
+leftChildOfAndTransExpr    =  closureAndOrTransExpr /
+                              collectionFuncExpr /
+                              cond
+
+rightChildOfAndTransExpr    = andTransExpression /
+                              closureAndOrTransExpr /
+                              collectionFuncExpr /
+                              cond
+
+
+orTransExpression          = left:leftChildOfOrTransExpr WSP+ type:"or" WSP+ right:rightChildOfOrTransExpr
+                              {
+                                  return {
+                                      type: type,
+                                      left: left,
+                                      right: right
+                                  };
+                              }
+
+andTransExpression         = left:leftChildOfAndTransExpr WSP+ type:"and" WSP+ right:rightChildOfAndTransExpr
+                              {
+                                  return {
+                                      type: type,
+                                      left: left,
+                                      right: right
+                                  };
+                              }
+
 aggregateExprList          =  i:aggregateExprItem WSP? list:("," WSP? l:aggregateExprList)? {
                                     if (list === "") list = [];
                                     list = list.filter(f => f !== "," && f !== " ");
@@ -482,7 +561,16 @@ aggregateExprItem          =  i:identifierRoot WSP+ "with" WSP+ m:aggregateMetho
 
 aggregateMethod            = "sum" / "min" / "max" / "average" / "countdistinct"
 
-aliasExpression             =
+// note: this is a specific odata abnf rules, ONLY USED in aggregations.
+// aliases can be added to the ast AFTER the odata parsing (post-odata OASIS rules.)
+aliasExpression             = p:mathExpr WSP+ "as" WSP+ a:identifier
+                             {
+                               return {
+                                 "type": "alias",
+                                 "name": a,
+                                 "expression":p
+                               };
+                             } /
                              p:part WSP+ "as" WSP+ a:identifier
                               {
                                 return {
@@ -490,8 +578,15 @@ aliasExpression             =
                                   "name": a,
                                   "expression":p
                                 };
-                              }
-
+                              } /
+                            p:identifierRoot WSP+ "as" WSP+ a:identifier
+                             {
+                               return {
+                                 "type": "alias",
+                                 "name": a,
+                                 "expression":p
+                               };
+                             }
 
 
 //filter
@@ -502,22 +597,81 @@ filter                      =   "$filter=" list:filterExpr {
                                 }
                             /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
 
-filterExpr                  =
-                              "(" WSP? filterExpr WSP? ")" ( WSP ("and"/"or") WSP filterExpr)? /
-                              left:cond right:( WSP type:("and"/"or") WSP value:filterExpr{
-                                    return { type: type, value: value}
-                              })? {
+/* The filterExpression (for the $filter query option):
+    - $filter=boolExpn:
+    - CAN have that weird grouping structure
+    - CAN have a root of "and"|"or", and handles precedence.
 
-                                if (right) {
-                                    return {
-                                        type: right.type,
-                                        left: left,
-                                        right: right.value
-                                    }
-                                } else {
-                                    return left;
-                                }
+    - differs from the filter transformation's expression because:
+        - DOES NOT try to match the `collectionFuncExpr`
+        - tries to match the `cond`. Which downstream has `collectionFuncExpr eq true|false`
+          ^^ this is for list containment
+*/
+filterExpr                 =  orExpression /
+                              andExpression /  /* 'and' binds more tightly than 'or' */
+                              closureAndOrExpr /  /* binds more tightly than not enclosed w/ parans */
+                              closureSingleCond / /* legacy from Lx condition-builder in ui */
+                              cond
+
+// closure (within parans)
+closureAndOrExpr           = "(" WSP? a:orExpression WSP? ")" {
+                                return a;
+                              } /
+                             "(" WSP? a:andExpression WSP? ")" {
+                                return a;
+                             }
+
+closureSingleCond          =  "(" WSP? a:cond WSP? ")" {
+                                return a;
                               }
+
+// or
+leftChildOfOrExpr          =  andExpression /
+                              closureAndOrExpr /
+                              closureSingleCond /
+                              cond
+
+rightChildOfOrExpr          = orExpression /
+                              andExpression /
+                              closureAndOrExpr /
+                              closureSingleCond /
+                              cond
+
+// and
+leftChildOfAndExpr         =  closureAndOrExpr /
+                              closureSingleCond /
+                              cond
+
+rightChildOfAndExpr         = andExpression /
+                              closureAndOrExpr /
+                              closureSingleCond /
+                              cond
+
+orExpression              = left:leftChildOfOrExpr WSP+ type:"or" WSP+ right:rightChildOfOrExpr
+                              {
+                                return {
+                                    type: type,
+                                    left: left,
+                                    right: right
+                                };
+                              }
+
+andExpression              = left:leftChildOfAndExpr WSP+ type:"and" WSP+ right:rightChildOfAndExpr
+                              {
+                                return {
+                                    type: type,
+                                    left: left,
+                                    right: right
+                                };
+                              }
+
+// end: OData query options
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/*
+ * OData common expressions
+ */
 
 booleanFunctions2Args       = "substringof" / "endswith" / "startswith" / "IsOf" / "contains"
 
@@ -552,7 +706,18 @@ otherFunc1                  = f:otherFunctions1Arg "(" arg0:part ")" {
     // this refers to the path to the set (e.g. the field in the record)
 // then the internal identifier (in the lambdaFunc), refers to the local variable. E.g. for x in listField
 
-collectionFuncExpr         = p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
+collectionFuncExpr         = p:idPathANDfuncArgExpr "(" a:identifier ":" b:identifier "/" arg0:collectionFuncExpr ")" {
+                                  return {
+                                      type: "functioncall",
+                                      func: p.func,
+                                      args: [{
+                                        type: "property",
+                                        name: p.idPath
+                                        }, arg0
+                                      ]
+                                  }
+                              } /
+                              p:idPathANDfuncArgExpr "(" arg0:lambdaFunc ")" {
                                   return {
                                       type: "functioncall",
                                       func: p.func,
@@ -588,7 +753,7 @@ idPartANDfuncArg           = a:"/" b:identifier {
                                 return b;
                              }
 
-lambdaFunc                 = arg0:lambdaVar ":" a:lambdaVar WSP op:op WSP b:part {
+lambdaFunc                 = arg0:identifierRoot ":" a:lambdaVar WSP op:op WSP b:part {
                                 return {
                                         type: "lambda",
                                         args: [
@@ -603,7 +768,18 @@ lambdaFunc                 = arg0:lambdaVar ":" a:lambdaVar WSP op:op WSP b:part
                              }
 
 // do not let lambdaVar be a primitiveLiteral, because ambiguity with datetime (int:int)
-lambdaVar                  = identifierRoot
+/* lambda expn for list containment is: `path/any(x:x op lit)`
+
+    whereas lambda expn for the filter on a fiberExpand (used in $apply transformation) is:
+      `path/any(x:path op lit)`   // fiber -> arrow -> filter
+      `path/any(x:path/any(x:path op lit))`   // fiber -> fiber -> filter
+*/
+lambdaVar                  =  a:identifier "/" b:identifierRoot {
+                                return b;
+                              } /
+                              a:identifierRoot {
+                                return a;
+                              }
 
 otherFunctions2Arg         = "indexof" / "concat" / "substring" / "replace"
 
@@ -629,7 +805,29 @@ otherFunc2                 = f:otherFunctions2Arg "(" WSP? arg0:part "," WSP? ar
                                   }
                               }
 
-cond                        = a:identifierRoot WSP+ op:op WSP+ b:part {
+cond                        =
+                              a:mathExpr WSP+ op:op WSP+ b:mathExpr {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                } /
+                              a:mathExpr WSP+ op:op WSP+ b:part {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                } /
+                              a:part WSP+ op:op WSP+ b:mathExpr {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                } /
+                              a:identifierRoot WSP+ op:op WSP+ b:part {
                                     return {
                                         type: op,
                                         left: a,
@@ -642,10 +840,23 @@ cond                        = a:identifierRoot WSP+ op:op WSP+ b:part {
                                         left: a,
                                         right: b
                                     };
-                                } / booleanFunc
+                                } /
+                               booleanFunc
 
-/* Does not have operator precedence. (peg decides path per each token.) Use nesting. */
-mathCond                   = a:part WSP? op:mathOp WSP? b:part {
+/* peg.js does not backtrack. Another way to do operator precedence:
+   Need to avoid left recursion (self-matching of left child),
+   And limit what can be left/right children.
+ */
+
+mathExpr                   =  additiveOperation /
+                              multiplicativeOperation /
+                              closureMathExpr
+
+closureMathExpr            = "(" WSP? a:mathExpr WSP? ")" {
+                                return a;
+                              }
+
+additiveOperation           =  a:additiveOperationLeftChild WSP? op:additiveOp WSP? b:additiveOperationRightChild {
                                     return {
                                         type: op,
                                         left: a,
@@ -653,13 +864,39 @@ mathCond                   = a:part WSP? op:mathOp WSP? b:part {
                                     };
                                 }
 
+additiveOp                   = "add" / "sub"
+
+additiveOperationLeftChild         =  multiplicativeOperation /
+                                      closureMathExpr /
+                                      part
+
+additiveOperationRightChild        =  additiveOperation /
+                                      multiplicativeOperation /
+                                      closureMathExpr /
+                                      part
+
+multiplicativeOperation     =  a:multiplicativeOperationLeftChild WSP? op:multiplicativeOp WSP? b:multiplicativeOperationRightChild {
+                                    return {
+                                        type: op,
+                                        left: a,
+                                        right: b
+                                    };
+                                }
+
+multiplicativeOp                   = "mul" / "div" / "mod"
+
+multiplicativeOperationLeftChild   =  closureMathExpr /
+                                      part
+
+multiplicativeOperationRightChild  =  multiplicativeOperation /
+                                      closureMathExpr /
+                                      part
+
+
 part                        =   collectionFuncExpr /
                                 booleanFunc /
                                 otherFunc2 /
                                 otherFunc1 /
-                                "(" WSP? c:mathCond WSP? ")" {
-                                  return c ;
-                                } /
                                 castExpression /
                                 l:primitiveLiteral {
                                     return {
@@ -711,25 +948,19 @@ nowUnit                     = "now()" u:unit? {
                                 }
                               }
 
-/* op is used at the root cond expression of the subtree. The mathOp is used in the subtrees. */
-op                          =
-                                "eq" /
+/* op is used at the root cond expression of the subtree. Math operators are used in the subtrees. */
+op                          =   "eq" /
                                 "ne" /
                                 "lt" /
                                 "le" /
                                 "gt" /
                                 "ge"
 
-mathOp                      =
-                                "add" /
-                                "sub" /
-                                "mul" /
-                                "div" /
-                                "mod"
-
 unsupported                 =   "$" er:.* { return { error: "unsupported method: " + er }; }
 
-//end: OData query options
+//end: OData common expressions
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
  * OData query
@@ -769,6 +1000,8 @@ query                       = list:expList {
                                 }
 
 // end: OData query
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
  * OData path
@@ -827,6 +1060,8 @@ endPath                     = e:resource "/" l:endPath {
                                   };
                               }
 // end: OData path
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
  * OData url

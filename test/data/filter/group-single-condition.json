@@ -1,0 +1,19 @@
+{
+  "expected": {
+    "$filter": {
+      "type": "eq",
+      "left": {
+        "type": "property",
+        "name": "name"
+      },
+      "right": {
+        "type": "literal",
+        "literalType": "string",
+        "value": "Klay Thompson"
+      }
+    },
+    "$select": [
+      "name"
+    ]
+  }
+}
