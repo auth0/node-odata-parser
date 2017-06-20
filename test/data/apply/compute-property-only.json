@@ -1,0 +1,20 @@
+{
+  "expected": {
+    "$apply": [
+      {
+        "type": "transformation",
+        "func": "compute",
+        "args": [
+          {
+            "type": "alias",
+            "name": "elephant",
+            "expression": {
+              "type": "property",
+              "name": "name"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

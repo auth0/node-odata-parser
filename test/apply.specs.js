@@ -94,6 +94,15 @@ describe('$apply query option', function () {
       assert.equal(ast.$apply[0].args[0].func, 'identity')
     })
 
+    describe('compute transformation, with property only', function () {
+      it('parsing on baseRT prop)', function () {
+        var ast = parser.parse('$apply=compute(name as elephant)')
+        var expected = require('./data/apply/compute-property-only.json').expected
+
+        assert.deepEqual(ast, expected)
+      })
+    })
+
     it('should parse $apply=compute(concat(x,y) as z, ( 1 add 2 ) as g)', function () {
       var ast = parser.parse(`$apply=compute(concat(x,y) as z, ( 1 add 2 ) as g)`)
 

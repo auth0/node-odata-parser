@@ -444,7 +444,7 @@ transformationArg          =
 
 applyList                 =  i:applyItem WSP? list:("," WSP? l:applyList)? {
                                     if (list === "") list = [];
-                                    list = list.filter(f => f !== "," && f !== " ");
+                                    list = list.filter(f => f !== "," && f !== " " && f !== "");
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
                                     }
@@ -532,7 +532,7 @@ andTransExpression         = left:leftChildOfAndTransExpr WSP+ type:"and" WSP+ r
 
 aggregateExprList          =  i:aggregateExprItem WSP? list:("," WSP? l:aggregateExprList)? {
                                     if (list === "") list = [];
-                                    list = list.filter(f => f !== "," && f !== " ");
+                                    list = list.filter(f => f !== "," && f !== " " && f !== "");
                                     if (require('util').isArray(list[0])) {
                                         list = list[0];
                                     }

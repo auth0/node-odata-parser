@@ -48,19 +48,16 @@
               }
             ]
           },
-          "",
-          [
-            {
-              "type": "transformation",
-              "func": "expand",
-              "args": [
-                {
-                  "type": "property",
-                  "name": "aaardvark_pickerrrr"
-                }
-              ]
-            }
-          ]
+          {
+            "type": "transformation",
+            "func": "expand",
+            "args": [
+              {
+                "type": "property",
+                "name": "aaardvark_pickerrrr"
+              }
+            ]
+          }
         ]
       },
       {
