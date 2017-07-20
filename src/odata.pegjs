@@ -57,7 +57,10 @@ castDateTimeFromLiteral      = date / dateTimeOffset / timeOfDay / null
 
 castStringFromLiteral        = date / dateTimeOffset / timeOfDay / primitiveLiteral
 
-null                         =  value:nullValue { return { type: 'null', value: value }; }
+null                         =  value:nullValue {
+                                    if (!value[1]) value[1] = '';
+                                    return { type: 'null', value: value };
+                                  }
                                 // Peg.js seems to have a bug with the nullValue rule where it won't provide the identifier value
                                 // to an action when it's labeled, so this rule is a workaround for that.
 
@@ -110,8 +113,8 @@ dateTimeBody               =  a:dateBody "T" d:timeBody {
 dateTimeOffsetBody          =   a:dateTimeBody b:"Z" { return a + b; }/
                                 a:dateTimeBody b:sign c:hour ":00" { return a + b + c + ":00"; }
 
-decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return { type: 'decimal', value: sign + digit.join('') + '.' + decimal.join('') }; } /
-                               sign? DIGIT+ ("M"/"m") { return { type: 'decimal', value: sign + digit.join('') }; }
+decimal                     =  sign:sign? digit:DIGIT+ "." decimal:DIGIT+ ("M"/"m")? { return { type: 'decimal', value: (sign || '') + digit.join('') + '.' + decimal.join('') }; } /
+                               sign:sign? digit:DIGIT+ ("M"/"m") { return { type: 'decimal', value: (sign || '') + digit.join('') }; }
 
 int32                       =   sign:sign? digit:DIGIT+ {
                                   return {
@@ -204,13 +207,14 @@ identifierPart              = a:[a-zA-Z] b:unreserved* { return a + b.join(''); 
 identifier                  = identifierPart
 
 identifierPathParts         =   "/" i:identifierPart list:identifierPathParts? {
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
-                                    return "/" + i + list;
+                                    return "/" + i + String(list);
                                 }
 
-identifierPath              =   a:identifier b:identifierPathParts? { return a + b; }
+identifierPath              =   a:identifier b:identifierPathParts? { return a + (b || ''); }
 
 // FIXME: cannot place aliasExpression as option here. Because in odata ABNF, is only in transformations.
 identifierRoot              =
@@ -263,20 +267,21 @@ expand                      =   "$expand=" list:expandList {
                             /   "$expand=" .* { return {"error": 'invalid $expand parameter'}; }
 
 expandList                  =   p:identifierPath opts:("(" WSP? o:expandOptionList WSP? ")" { return o; })? list:("," WSP? l:expandList {return l;})? {
-                                    if (opts === "") opts = [];
+                                    if (!opts) opts = [];
                                     var options = {};
-                                    for(var i in opts){
-
-                                        if (opts[i] !== "") {
-                                            var paramName = Object.keys(opts[i])[0]; //ie: $top
-                                            options[paramName] = opts[i][paramName];
-                                            if (paramName === 'error') {
-                                              return { "error": opts[i][paramName] };
-                                            }
+                                    for (var i = 0; i < opts.length; i++) {
+                                      var opt = opts[i]
+                                      if (opt && typeof opt === 'object') {
+                                        if (opt.error) return opt
+                                        var key = Object.keys(opt)[0]
+                                        if (options.hasOwnProperty(key)) {
+                                          return { error: key + ' cannot exist more than once in $expand' }
                                         }
+                                        options[key] = opt[key]
+                                      }
                                     }
-                                    if (list === "") list = [];
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     if (typeof list.error === 'string') {
@@ -345,13 +350,12 @@ orderby                     =   "$orderby=" list:orderbyList {
 
 orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
                                     var result = {};
-                                    result[id] = ord[1] || 'asc';
+                                    result[id] = (ord && ord[1]) || 'asc';
                                     return result;
                                 })
                               list:("," WSP? l:orderbyList{return l;})? {
-
-                                    if (list === "") list = [];
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     list.unshift(i);
@@ -364,9 +368,9 @@ select                      =   "$select=" list:selectList { return { "$select":
                             /   "$select=" .* { return {"error": 'invalid $select parameter'}; }
 
 selectList                  =
-                                i:(a:identifierPath b:".*"?{return a + b;}/"*") list:("," WSP? l:selectList {return l;})? {
-                                    if (list === "") list = [];
-                                    if (require('util').isArray(list[0])) {
+                                i:(a:identifierPath b:".*"?{return (a || '') + (b || '');}/"*") list:("," WSP* l:selectList {return l;})? {
+                                    if (!list) list = [];
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     list.unshift(i);
@@ -384,9 +388,9 @@ apply                      =  "$apply=" WSP? t:transformationsList
                                 }
 
 transformationsList        =  i:transformation WSP? list:("/" WSP? l:transformationsList)? {
-                                    if (list === "") list = [];
-                                    list = list.filter(f => f !== "/" && f !== " " && f !== "");
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    list = list.filter(f => f !== "/" && f !== " " && f);
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     list.unshift(i);
@@ -443,9 +447,9 @@ transformationArg          =
                               "compute"
 
 applyList                 =  i:applyItem WSP? list:("," WSP? l:applyList)? {
-                                    if (list === "") list = [];
-                                    list = list.filter(f => f !== "," && f !== " " && f !== "");
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    list = list.filter(f => f !== "," && f !== " " && f);
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     list.unshift(i);
@@ -531,9 +535,9 @@ andTransExpression         = left:leftChildOfAndTransExpr WSP+ type:"and" WSP+ r
                               }
 
 aggregateExprList          =  i:aggregateExprItem WSP? list:("," WSP? l:aggregateExprList)? {
-                                    if (list === "") list = [];
-                                    list = list.filter(f => f !== "," && f !== " " && f !== "");
-                                    if (require('util').isArray(list[0])) {
+                                    if (!list) list = [];
+                                    list = list.filter(f => f !== "," && f !== " " && f);
+                                    if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
                                     list.unshift(i);
@@ -988,13 +992,14 @@ query                       = list:expList {
                                     //turn the array into an object like:
                                     // { $top: 5, $skip: 10 }
                                     var result = {};
-                                    list = list || [];
-                                    for(var i in list){
-
-                                        if (list[i] !== "") {
-                                            var paramName = Object.keys(list[i])[0]; //ie: $top
-                                            result[paramName] = list[i][paramName];
-                                        }
+                                    if (!Array.isArray(list)) list = [];
+                                    for (var i = 0; i < list.length; i++) {
+                                      var item = list[i]
+                                      if (item) {
+                                        var key = Object.keys(item)[0] //ie: $top
+                                        if (result.hasOwnProperty(key)) return { error: key + ' cannot exist more than once in query string' }
+                                        result[key] = item[key]
+                                      }
                                     }
                                     return result;
                                 }

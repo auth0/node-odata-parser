@@ -1,3 +1,5 @@
+// @flow
+/*:: import type { ODataAST } from '../src/odata.types.js' */
 /* eslint-env mocha */
 var assert = require('assert')
 var parser = require('../lib')
@@ -7,16 +9,28 @@ var parser = require('../lib')
 describe('$expand query option', function () {
   it('should parse $expand and return an array of identifier paths', function () {
     var ast = parser.parse('$expand=Category,Products/Suppliers,Items($expand=ItemRatings;$select=ItemDetails;$search="foo")')
-    assert.equal(ast.$expand[0].path, 'Category')
-    assert.equal(ast.$expand[1].path, 'Products/Suppliers')
-    assert.equal(ast.$expand[2].path, 'Items')
-    assert.equal(ast.$expand[2].options.$expand[0].path, 'ItemRatings')
-    assert.equal(ast.$expand[2].options.$select[0], 'ItemDetails')
-    assert.equal(ast.$expand[2].options.$search, 'foo')
+    const expected /*: ODataAST */ = {
+      '$expand':
+       [ { path: 'Category', options: {} },
+         { path: 'Products/Suppliers', options: {} },
+         { path: 'Items',
+           options:
+            { '$expand': [ { path: 'ItemRatings', options: {} } ],
+              '$select': [ 'ItemDetails' ],
+              '$search': 'foo' } } ] }
+
+    assert.deepEqual(ast, expected)
   })
 
   it('should not allow duplicate expand paths', function () {
     var ast = parser.parse('$expand=ItemRatings,ItemRatings')
-    assert.equal(ast.error, 'duplicate $expand navigationProperty')
+    const expected /*: ODataAST */ = { error: 'duplicate $expand navigationProperty' }
+    assert.deepEqual(ast, expected)
+  })
+
+  it('should not allow duplicate expand options', function () {
+    var ast = parser.parse('$expand=Category,Products/Suppliers,Items($select=ItemDetails;$select=SomethingElse)')
+    const expected /*: ODataAST */ = { error: '$select cannot exist more than once in $expand' }
+    assert.deepEqual(ast, expected)
   })
 })

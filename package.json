@@ -1,19 +1,23 @@
 {
   "name": "@lanetix/odata-parser",
-  "version": "5.0.1",
+  "version": "6.0.0",
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
-    "test": "rm -f lib/odata-parser.js && npm run-script prepublish && mocha -R spec --opts test/mocha.opts",
-    "prepublish": "pegjs src/odata.pegjs lib/odata-parser.js",
+    "flow": "flow check --show-all-errors",
+    "build": "./add.flow.js",
+    "test": "npm run-script prepublish && npm run-script flow && mocha -R spec --opts test/mocha.opts",
+    "prepublish": "rm -rf lib && mkdir lib && pegjs -o lib/index.js src/odata.pegjs && npm run-script build",
     "repl": "npm run prepublish && node repl.js"
   },
-  "dependencies": {},
   "devDependencies": {
-    "pegjs": "0.7.0",
+    "babel-core": "^6.25.0",
+    "babel-plugin-flow-runtime": "^0.11.1",
+    "babel-plugin-syntax-flow": "^6.18.0",
+    "babel-preset-env": "^1.6.0",
+    "flow-bin": "^0.50.0",
     "mocha": "2.1.0",
-    "should": "^8.1.1",
-    "standard": "^8.6.0"
+    "pegjs": "0.10.0"
   },
   "repository": {
     "type": "git",
@@ -24,5 +28,8 @@
     "parser"
   ],
   "author": "auth0",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "flow-runtime": "^0.13.0"
+  }
 }

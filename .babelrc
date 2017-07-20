@@ -1,0 +1,10 @@
+{
+  "presets": ["env"],
+  "plugins": [
+    "syntax-flow",
+    ["flow-runtime", {
+      "assert": true,
+      "annotate": false
+    }]
+  ]
+}
