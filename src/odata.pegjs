@@ -255,16 +255,11 @@ callback                    =   "$callback=" a:identifier { return { '$callback'
 
 // $top
 top                         =   "$top=" a:INT { return { '$top': ~~a }; }
-                            /   "$top=" .* { return {"error": 'invalid $top parameter'}; }
+                            /   "$top=" .* { expected('a valid $top parameter (integer)') }
 
 // $expand
-expand                      =   "$expand=" list:expandList {
-                                    if (typeof list.error === 'string') {
-                                      return { "error": list.error }
-                                    }
-                                    return { "$expand": list };
-                                }
-                            /   "$expand=" .* { return {"error": 'invalid $expand parameter'}; }
+expand                      =   "$expand=" list:expandList { return { "$expand": list } }
+                            /   "$expand=" .* { expected('a valid $expand parameter (identifierPath)') }
 
 expandList                  =   p:identifierPath opts:("(" WSP? o:expandOptionList WSP? ")" { return o; })? list:("," WSP? l:expandList {return l;})? {
                                     if (!opts) opts = [];
@@ -272,10 +267,9 @@ expandList                  =   p:identifierPath opts:("(" WSP? o:expandOptionLi
                                     for (var i = 0; i < opts.length; i++) {
                                       var opt = opts[i]
                                       if (opt && typeof opt === 'object') {
-                                        if (opt.error) return opt
                                         var key = Object.keys(opt)[0]
                                         if (options.hasOwnProperty(key)) {
-                                          return { error: key + ' cannot exist more than once in $expand' }
+                                          expected(key + ' to not appear more than once in $expand option')
                                         }
                                         options[key] = opt[key]
                                       }
@@ -284,13 +278,10 @@ expandList                  =   p:identifierPath opts:("(" WSP? o:expandOptionLi
                                     if (Array.isArray(list[0])) {
                                         list = list[0];
                                     }
-                                    if (typeof list.error === 'string') {
-                                      return { "error": list.error }
-                                    }
                                     // FIXME: Make this just look at the navigation property, not the ancillary type information,
                                     // and store the rest of the type information elsewhere in the structure.
                                     if (list.findIndex(function (entry) { return entry.path === p; }) !== -1) {
-                                      return {"error": 'duplicate $expand navigationProperty'};
+                                      expected(p + ' to not appear more than once in $expand path')
                                     }
                                     list.unshift({ path: p, options: options });
                                     return list;
@@ -312,17 +303,17 @@ expandOptionList            = e:expandOption WSP? ";" WSP? el:expandOptionList {
 
 //$skip
 skip                        =   "$skip=" a:INT {return {'$skip': ~~a }; }
-                            /   "$skip=" .* { return {"error": 'invalid $skip parameter'}; }
+                            /   "$skip=" .* { expected('a valid $skip parameter (integer)') }
 
 //$format
 format                      =   "$format=" v:.+ { return {'$format': v.join('') }; }
-                            /   "$format=" .* { return {"error": 'invalid $format parameter'}; }
+                            /   "$format=" .* { expected('a valid $format parameter (string)') }
 //$inlinecount
 inlinecount                 =   "$count=" v:boolean { return {'$count': v.value }; }
-                            /   "$count=" .* { return {"error": 'invalid $count parameter'}; }
+                            /   "$count=" .* { expected('a valid $count parameter (boolean)') }
 
 search                      =   "$search=" WSP? s:searchExpr { return { '$search': s } }
-                            /   "$search=" .* { return {"error": 'invalid $search parameter'}; }
+                            /   "$search=" .* { expected('a valid $search parameter (string)') }
 
 searchExpr                  =	 s:searchTerm { return s }
 
@@ -346,7 +337,7 @@ searchPhrase                = DQUOTE s:QCHAR_NO_AMP_DQUOTE+ DQUOTE { return s.jo
 // $orderby
 orderby                     =   "$orderby=" list:orderbyList {
                                     return { "$orderby": list }; }
-                            /   "$orderby=" .* { return {"error": 'invalid $orderby parameter'}; }
+                            /   "$orderby=" .* { expected('a valid $orderby parameter (identifierPath "asc"|"desc")') }
 
 orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
                                     var result = {};
@@ -365,7 +356,7 @@ orderbyList                 = i:(id:identifierPath ord:(WSP ("asc"/"desc"))? {
 
 //$select
 select                      =   "$select=" list:selectList { return { "$select":list }; }
-                            /   "$select=" .* { return {"error": 'invalid $select parameter'}; }
+                            /   "$select=" .* { expected('a valid $select parameter (identifierPath)') }
 
 selectList                  =
                                 i:(a:identifierPath b:".*"?{return (a || '') + (b || '');}/"*") list:("," WSP* l:selectList {return l;})? {
@@ -599,7 +590,7 @@ filter                      =   "$filter=" list:filterExpr {
                                         "$filter": list
                                     };
                                 }
-                            /   "$filter=" .* { return {"error": 'invalid $filter parameter'}; }
+                            /   "$filter=" .* { expected('a valid $filter parameter') }
 
 /* The filterExpression (for the $filter query option):
     - $filter=boolExpn:
@@ -960,7 +951,7 @@ op                          =   "eq" /
                                 "gt" /
                                 "ge"
 
-unsupported                 =   "$" er:.* { return { error: "unsupported method: " + er }; }
+unsupported                 =   "$" er:.* { expected('$select, $filter, $expand, $orderby, $callback, $format, $search, $count, $top, $count, $skip, or $apply') }
 
 //end: OData common expressions
 
@@ -997,7 +988,7 @@ query                       = list:expList {
                                       var item = list[i]
                                       if (item) {
                                         var key = Object.keys(item)[0] //ie: $top
-                                        if (result.hasOwnProperty(key)) return { error: key + ' cannot exist more than once in query string' }
+                                        if (result.hasOwnProperty(key)) expected(key + ' to not appear more than once in query string')
                                         result[key] = item[key]
                                       }
                                     }

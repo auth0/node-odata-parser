@@ -1,0 +1,10 @@
+#source
+src
+
+#tests
+test
+
+#build tools
+.travis.yml
+.babelrc
+add.flow.js

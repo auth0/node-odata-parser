@@ -23,14 +23,16 @@ describe('$expand query option', function () {
   })
 
   it('should not allow duplicate expand paths', function () {
-    var ast = parser.parse('$expand=ItemRatings,ItemRatings')
-    const expected /*: ODataAST */ = { error: 'duplicate $expand navigationProperty' }
-    assert.deepEqual(ast, expected)
+    assert.throws(() => parser.parse('$expand=ItemRatings,ItemRatings'), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected ItemRatings to not appear more than once in $expand path but "ItemRatings,ItemRatings" found.'
+    })
   })
 
   it('should not allow duplicate expand options', function () {
-    var ast = parser.parse('$expand=Category,Products/Suppliers,Items($select=ItemDetails;$select=SomethingElse)')
-    const expected /*: ODataAST */ = { error: '$select cannot exist more than once in $expand' }
-    assert.deepEqual(ast, expected)
+    assert.throws(() => parser.parse('$expand=Category,Products/Suppliers,Items($select=ItemDetails;$select=SomethingElse)'), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected $select to not appear more than once in $expand option but "Items($select=ItemDetails;$select=SomethingElse)" found.'
+    })
   })
 })

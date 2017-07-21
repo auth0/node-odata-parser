@@ -6,9 +6,10 @@ var parser = require('../lib')
 
 describe('odata.parser grammar', function () {
   it('should not allow duplicate OData query options', function () {
-    var ast = parser.parse('$select=lanetix/id,name&$select=some_other_field')
-    var expected /*: ODataAST */ = { error: '$select cannot exist more than once in query string' }
-    assert.deepEqual(ast, expected)
+    assert.throws(() => parser.parse('$select=lanetix/id,name&$select=some_other_field'), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected $select to not appear more than once in query string but "$select=lanetix/id,name&$select=some_other_field" found.'
+    })
   })
 
   it('should parse $top and return the value', function () {
@@ -56,13 +57,15 @@ describe('odata.parser grammar', function () {
     var expected1 /*: ODataAST */ = { '$count': false }
     assert.deepEqual(ast1, expected1)
 
-    var ast2 = parser.parse('$count=')
-    var expected2 /*: ODataAST */ = { error: 'invalid $count parameter' }
-    assert.deepEqual(ast2, expected2)
+    assert.throws(() => parser.parse('$count='), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected a valid $count parameter (boolean) but "$count=" found.'
+    })
 
-    var ast3 = parser.parse('$count=test')
-    var expected3 /*: ODataAST */ = { error: 'invalid $count parameter' }
-    assert.deepEqual(ast3, expected3)
+    assert.throws(() => parser.parse('$count=test'), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected a valid $count parameter (boolean) but "$count=test" found.'
+    })
   })
 
   it('should parse $format okay', function () {
@@ -70,9 +73,10 @@ describe('odata.parser grammar', function () {
     var expected /*: ODataAST */ = { '$format': 'application/atom+xml' }
     assert.deepEqual(ast, expected)
 
-    var ast2 = parser.parse('$format=')
-    var expected2 /*: ODataAST */ = { error: 'invalid $format parameter' }
-    assert.deepEqual(ast2, expected2)
+    assert.throws(() => parser.parse('$format='), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected a valid $format parameter (string) but "$format=" found.'
+    })
   })
 
   it('should parse $search okay', function () {
@@ -84,9 +88,10 @@ describe('odata.parser grammar', function () {
     var expected2 /*: ODataAST */ = { '$search': 'Dell "plan b"' }
     assert.deepEqual(ast2, expected2)
 
-    var ast3 = parser.parse('$search=')
-    var expected3 /*: ODataAST */ = { error: 'invalid $search parameter' }
-    assert.deepEqual(ast3, expected3)
+    assert.throws(() => parser.parse('$search='), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected a valid $search parameter (string) but "$search=" found.'
+    })
   })
 
   it('should parse $callback', function () {

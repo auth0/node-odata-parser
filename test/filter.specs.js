@@ -241,11 +241,11 @@ describe('$filter query option', function () {
     })
   })
 
-  it('should return an error if invalid value', function () {
-    var ast = parser.parse('$top=foo')
-    var expected /*: ODataAST */ = { error: 'invalid $top parameter' }
-
-    assert.deepEqual(ast, expected)
+  it('should not allow invalid values', function () {
+    assert.throws(() => parser.parse('$top=foo'), (e) => {
+      return e instanceof parser.SyntaxError && e.message ===
+      'Expected a valid $top parameter (integer) but "$top=foo" found.'
+    })
   })
 
   it('should parse boolean okay', function () {
@@ -504,10 +504,11 @@ describe('$filter query option', function () {
       assert.deepEqual(ast3, expected3)
     })
 
-    it('should return an error if attempting to cast a property', function () {
-      var ast = parser.parse('$filter=cast(time, Edm.String) eq 23')
-      var expected /*: ODataAST */ = { error: 'invalid $filter parameter' }
-      assert.deepEqual(ast, expected)
+    it('should not allow casting a property', function () {
+      assert.throws(() => parser.parse('$filter=cast(time, Edm.String) eq 23'), (e) => {
+        return e instanceof parser.SyntaxError && e.message ===
+        'Expected a valid $filter parameter but "$filter=cast(time, Edm.String) eq 23" found.'
+      })
     })
   })
 

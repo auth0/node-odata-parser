@@ -13,8 +13,6 @@ export type ODataAST = {|
   $top?: number
 |} | {|
   $apply: $apply
-|} | {|
-  error: string
 |}
 
 export type $apply = Array<transformation>
