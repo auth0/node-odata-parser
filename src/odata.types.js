@@ -30,7 +30,7 @@ export type $path = Array<{|
 
 export type ODataTransformationNode = transformation
 export type ODataExpressionNode = equalityExpr | mathExpr | andOrExpr | lambdaArg2
-export type ODataNode = ODataLiteralNode | ODataFuncNode | lambdaFunc | identifierRoot | ODataNowNode | ODataCastNode | ODataAliasNode | ODataExpressionNode | lambdaArg2 | transformation
+export type ODataNode = ODataLiteralNode | ODataFuncNode | lambdaFunc | identifierRoot | ODataNowNode | ODataCastNode | ODataAliasNode | ODataExpressionNode | transformation | aggregateExpr | aggregateAlias | andOrTransformationExpr | primitiveLiteral
 export type ODataNowUnit = 'microseconds' | 'milliseconds' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'decade' | 'century' | 'millennium';
 export type ODataPropertyNode = identifierRoot
 export type ODataAliasNode = aliasExpression
@@ -165,19 +165,21 @@ type transformation = transformationAggregate | transformationIdentity | transfo
 type transformationArg = 'topcount' | 'topsum' | 'toppercent' | 'bottomcount' | 'bottomsum' | 'bottompercent' | 'expand' | 'search' | 'compute'
 
 type aggregateExpr = {|
+  type: 'aggregate',
+  func: 'sum' | 'min' | 'max' | 'average' | 'countdistinct',
+  args: [identifierRoot]
+|}
+
+type aggregateAlias = {|
   type: 'alias',
   name: string,
-  expression: {|
-    type: 'aggregate',
-    func: 'sum' | 'min' | 'max' | 'average' | 'countdistinct',
-    args: [identifierRoot]
-  |}
+  expression: aggregateExpr
 |}
 
 type transformationAggregate = {|
   type: 'transformation',
   func: 'aggregate',
-  args: Array<transformation | aliasExpression | part | aggregateExpr>
+  args: Array<transformation | aliasExpression | part | aggregateAlias>
 |}
 
 type transformationIdentity = {|
@@ -195,7 +197,7 @@ type transformationFilter = {|
 type transformationApply = {|
   type: 'transformation',
   func: transformationArg,
-  args: Array<transformation | aliasExpression | part | aggregateExpr>
+  args: Array<transformation | aliasExpression | part | aggregateAlias>
 |}
 
 type andOrTransformationExpr = {|
