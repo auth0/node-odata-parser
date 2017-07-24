@@ -1,6 +1,6 @@
 {
   "name": "@lanetix/odata-parser",
-  "version": "6.1.1",
+  "version": "6.1.2",
   "description": "OData query string parser",
   "main": "lib/index.js",
   "scripts": {
@@ -30,6 +30,6 @@
   "author": "auth0",
   "license": "MIT",
   "dependencies": {
-    "flow-runtime": "^0.13.0"
+    "flow-runtime": "^0.14.0"
   }
 }
