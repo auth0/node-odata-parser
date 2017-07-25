@@ -20,7 +20,11 @@ fs.writeFileSync(parserPath, babel.transform(
     `  parse:       peg$parse\n` +
     `};`,
     'export const SyntaxError = peg$SyntaxError\n' +
-    'export const parse = peg$parse'
+    'export const parse = peg$parse\n' +
+    `export default {\n` +
+    `  SyntaxError: peg$SyntaxError,\n` +
+    `  parse:       peg$parse\n` +
+    `}`
   ).replace(
     `function peg$parse(input, options) {`,
     `function peg$parse(input: string, options?: Object): ODataAST {`
