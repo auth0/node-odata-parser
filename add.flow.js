@@ -47,7 +47,7 @@ fs.writeFileSync(parserPath, babel.transform(
   `function peg$computePosDetails(pos /*: number */) {`
 ).replace(
   `var ODataAST = _flowRuntime2`,
-  `var ODataAST1 = (() => {\nvar ODataAST = _flowRuntime2`
+  `var ODataAST1 = (function () {\nvar ODataAST = _flowRuntime2`
 ).replace(
   `return ODataAST;`,
   `return ODataAST1`
